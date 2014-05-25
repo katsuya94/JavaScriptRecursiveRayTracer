@@ -1,6 +1,38 @@
 <html>
 <head>
 	<script src="particles.js"></script>
+	<script id="static-vs" type="x-shader/x-vertex">
+
+attribute vec4 a_position;
+
+void main() {
+	gl_Position = a_position;
+}
+
+	</script>
+	<script id="static-fs" type="x-shader/x-fragment">
+
+void main() {
+	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+}
+
+	</script>
+	<script id="image-vs" type="x-shader/x-vertex">
+
+attribute vec2 a_position;
+
+void main() {
+	gl_Position = a_position;
+}
+
+	</script>
+	<script id="image-fs" type="x-shader/x-fragment">
+
+void main() {
+	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+}
+
+	</script>
 </head>
 <body onload="main()" onresize="resize()">
 	<canvas id="webgl" style="position: fixed; top: 0; left: 0;">

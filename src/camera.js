@@ -113,5 +113,25 @@ function init_camera() {
 		}
 	};
 
+	camera.update = function() {
+		camera.altitude += dt * ((camera.dirpad[3] ? 1 : 0) + (camera.dirpad[1] ? -1 : 0));
+		camera.direction += dt * ((camera.dirpad[2] ? 1 : 0) + (camera.dirpad[0] ? -1 : 0));
+		mat4.identity(camera.rotate);
+		mat4.rotateX(camera.rotate, camera.rotate, camera.altitude);
+		mat4.rotateZ(camera.rotate, camera.rotate, camera.direction);
+		mat4.adjoint(camera.adjoint, camera.rotate);
+		vec3.transformMat4(camera.frontr, camera.front, camera.adjoint);
+		vec3.scale(camera.frontr, camera.frontr, dt * ((camera.wasd[1] ? 10 : 0) + (camera.wasd[3] ? -10 : 0)));
+		vec3.transformMat4(camera.upr, camera.up, camera.adjoint);
+		vec3.scale(camera.upr, camera.upr, dt * ((camera.qe[0] ? 10 : 0) + (camera.qe[1] ? -10 : 0)));
+		vec3.transformMat4(camera.rightr, camera.right, camera.adjoint);
+		vec3.scale(camera.rightr, camera.rightr, dt * ((camera.wasd[0] ? 10 : 0) + (camera.wasd[2] ? -10 : 0)));
+		vec3.add(camera.position, camera.position, camera.frontr);
+		vec3.add(camera.position, camera.position, camera.upr);
+		vec3.add(camera.position, camera.position, camera.rightr);
+		mat4.translate(camera.view, camera.rotate, camera.position);
+		mat4.multiply(camera.vp, camera.projection, camera.view);
+	}
+
 	return camera;
 }
