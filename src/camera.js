@@ -1,10 +1,11 @@
 /* jshint strict: false */
-/* global projection: true, mat4, vec3 */
-/* exported init_camera */
+/* global mat4, vec3 */
+/* exported init_camera, projection */
+
+var projection;
 
 function init_camera() {
 	var camera = {};
-	cam = camera;
 
 	camera.view = mat4.create();
 	camera.altitude = -Math.PI / 4;
@@ -113,7 +114,7 @@ function init_camera() {
 		}
 	};
 
-	camera.update = function() {
+	camera.update = function(dt) {
 		camera.altitude += dt * ((camera.dirpad[3] ? 1 : 0) + (camera.dirpad[1] ? -1 : 0));
 		camera.direction += dt * ((camera.dirpad[2] ? 1 : 0) + (camera.dirpad[0] ? -1 : 0));
 		mat4.identity(camera.rotate);
@@ -131,7 +132,7 @@ function init_camera() {
 		vec3.add(camera.position, camera.position, camera.rightr);
 		mat4.translate(camera.view, camera.rotate, camera.position);
 		mat4.multiply(camera.vp, camera.projection, camera.view);
-	}
+	};
 
 	return camera;
 }

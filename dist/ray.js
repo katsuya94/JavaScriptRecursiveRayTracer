@@ -7908,148 +7908,6 @@ if(typeof(exports) !== 'undefined') {
 
 // FILE SEPARATOR
 
-var Stats = function () {
-
-	var startTime = Date.now(), prevTime = startTime;
-	var ms = 0, msMin = Infinity, msMax = 0;
-	var fps = 0, fpsMin = Infinity, fpsMax = 0;
-	var frames = 0, mode = 0;
-
-	var container = document.createElement( 'div' );
-	container.id = 'stats';
-	container.addEventListener( 'mousedown', function ( event ) { event.preventDefault(); setMode( ++ mode % 2 ) }, false );
-	container.style.cssText = 'width:80px;opacity:0.9;cursor:pointer';
-
-	var fpsDiv = document.createElement( 'div' );
-	fpsDiv.id = 'fps';
-	fpsDiv.style.cssText = 'padding:0 0 3px 3px;text-align:left;background-color:#002';
-	container.appendChild( fpsDiv );
-
-	var fpsText = document.createElement( 'div' );
-	fpsText.id = 'fpsText';
-	fpsText.style.cssText = 'color:#0ff;font-family:Helvetica,Arial,sans-serif;font-size:9px;font-weight:bold;line-height:15px';
-	fpsText.innerHTML = 'FPS';
-	fpsDiv.appendChild( fpsText );
-
-	var fpsGraph = document.createElement( 'div' );
-	fpsGraph.id = 'fpsGraph';
-	fpsGraph.style.cssText = 'position:relative;width:74px;height:30px;background-color:#0ff';
-	fpsDiv.appendChild( fpsGraph );
-
-	while ( fpsGraph.children.length < 74 ) {
-
-		var bar = document.createElement( 'span' );
-		bar.style.cssText = 'width:1px;height:30px;float:left;background-color:#113';
-		fpsGraph.appendChild( bar );
-
-	}
-
-	var msDiv = document.createElement( 'div' );
-	msDiv.id = 'ms';
-	msDiv.style.cssText = 'padding:0 0 3px 3px;text-align:left;background-color:#020;display:none';
-	container.appendChild( msDiv );
-
-	var msText = document.createElement( 'div' );
-	msText.id = 'msText';
-	msText.style.cssText = 'color:#0f0;font-family:Helvetica,Arial,sans-serif;font-size:9px;font-weight:bold;line-height:15px';
-	msText.innerHTML = 'MS';
-	msDiv.appendChild( msText );
-
-	var msGraph = document.createElement( 'div' );
-	msGraph.id = 'msGraph';
-	msGraph.style.cssText = 'position:relative;width:74px;height:30px;background-color:#0f0';
-	msDiv.appendChild( msGraph );
-
-	while ( msGraph.children.length < 74 ) {
-
-		var bar = document.createElement( 'span' );
-		bar.style.cssText = 'width:1px;height:30px;float:left;background-color:#131';
-		msGraph.appendChild( bar );
-
-	}
-
-	var setMode = function ( value ) {
-
-		mode = value;
-
-		switch ( mode ) {
-
-			case 0:
-				fpsDiv.style.display = 'block';
-				msDiv.style.display = 'none';
-				break;
-			case 1:
-				fpsDiv.style.display = 'none';
-				msDiv.style.display = 'block';
-				break;
-		}
-
-	}
-
-	var updateGraph = function ( dom, value ) {
-
-		var child = dom.appendChild( dom.firstChild );
-		child.style.height = value + 'px';
-
-	}
-
-	return {
-
-		REVISION: 11,
-
-		domElement: container,
-
-		setMode: setMode,
-
-		begin: function () {
-
-			startTime = Date.now();
-
-		},
-
-		end: function () {
-
-			var time = Date.now();
-
-			ms = time - startTime;
-			msMin = Math.min( msMin, ms );
-			msMax = Math.max( msMax, ms );
-
-			msText.textContent = ms + ' MS (' + msMin + '-' + msMax + ')';
-			updateGraph( msGraph, Math.min( 30, 30 - ( ms / 200 ) * 30 ) );
-
-			frames ++;
-
-			if ( time > prevTime + 1000 ) {
-
-				fps = Math.round( ( frames * 1000 ) / ( time - prevTime ) );
-				fpsMin = Math.min( fpsMin, fps );
-				fpsMax = Math.max( fpsMax, fps );
-
-				fpsText.textContent = fps + ' FPS (' + fpsMin + '-' + fpsMax + ')';
-				updateGraph( fpsGraph, Math.min( 30, 30 - ( fps / 100 ) * 30 ) );
-
-				prevTime = time;
-				frames = 0;
-
-			}
-
-			return time;
-
-		},
-
-		update: function () {
-
-			startTime = this.end();
-
-		}
-
-	}
-
-};;
-
-// FILE SEPARATOR
-
 /**
  * @fileoverview This file contains functions every webgl program will need
  * a version of one way or another.
@@ -8249,12 +8107,93 @@ function box(x, y, z) {
 
 // FILE SEPARATOR
 
-/* global projection: true, mat4, vec3 */
-/* exported init_camera */
+/* global this, gl */
+/* global mat4 */
+/* global ASIZE, ESIZE, VSIZE */
+/* exported init_buffers */
+
+function Buffers(program) {
+	this.a_position	= gl.getAttribLocation(program, 'a_position');
+	this.a_color	= gl.getAttribLocation(program, 'a_color');
+
+	this.u_mvp		= gl.getUniformLocation(program, 'u_mvp');
+
+	this.draws = [];
+
+	this.vertices = [];
+	this.indices = [];
+
+	this.mvp = mat4.create();
+}
+
+Buffers.prototype.arrayDraw = function(ent, md) {
+	var offset = this.vertices.length / VSIZE;
+	var count = ent.vertices.length / VSIZE;
+	var mode = gl[md.toUpperCase()];
+
+	this.vertices = this.vertices.concat(ent.vertices);
+
+	var thisself = this;
+
+	this.draws.push(function(vp) {
+		mat4.multiply(thisself.mvp, ent.model, vp);
+		gl.uniformMatrix4fv(thisself.u_mvp, false, thisself.mvp);
+		gl.drawArrays(mode, offset, count);
+	});
+};
+
+Buffers.prototype.elementDraw = function(ent, md) {
+	var offset = this.indices.length;
+	var count = ent.indices.length;
+	var mode = gl[md.toUpperCase()];
+
+	var v_offset = this.vertices.length / VSIZE;
+
+	this.vertices = this.vertices.concat(ent.vertices);
+	
+	for (var i = 0; i < ent.indices.length; i++) {
+		this.indices.push(ent.indices[i] + v_offset);
+	}
+
+	var thisself = this;
+
+	this.draws.push(function(vp) {
+		mat4.multiply(thisself.mvp, ent.model, vp);
+		gl.uniformMatrix4fv(thisself.u_mvp, false, thisself.mvp);
+		gl.drawElements(mode, count, gl.UNSIGNED_SHORT, offset * ESIZE);
+	});
+};
+
+Buffers.prototype.draw = function(camera) {
+	for (var i = 0; i < this.draws.length; i++) {
+		this.draws[i](camera.vp);
+	}
+};
+
+Buffers.prototype.populate = function() {
+	this.buffer_vertex = gl.createBuffer();
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer_vertex);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
+
+	gl.enableVertexAttribArray(this.a_position);
+	gl.enableVertexAttribArray(this.a_color);
+
+	var indexBuffer = gl.createBuffer();
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), gl.STATIC_DRAW);
+};;
+
+// FILE SEPARATOR
+
+/* global mat4, vec3 */
+/* exported init_camera, projection */
+
+var projection;
 
 function init_camera() {
 	var camera = {};
-	cam = camera;
 
 	camera.view = mat4.create();
 	camera.altitude = -Math.PI / 4;
@@ -8363,286 +8302,7 @@ function init_camera() {
 		}
 	};
 
-	return camera;
-};
-
-// FILE SEPARATOR
-
-/* exported X_LOW, X_HI, Y_LOW, Y_HI, Z_LOW, Z_HI, VELOCITY, NUM_PARTICLES, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT, GRID_NUM, GRID_INT, FSIZE, MODE */
-
-var NUM_PARTICLES			= Math.pow(64, 2);
-var NUM_SLOTS				= 2;
-var UNITS					= 4;
-var PARTICLES_PER_ROW		= Math.sqrt(NUM_PARTICLES);
-var STATE_TEXTURE_WIDTH		= PARTICLES_PER_ROW * NUM_SLOTS;
-var STATE_TEXTURE_HEIGHT	= PARTICLES_PER_ROW;
-
-var GRID_NUM	= 500;
-var GRID_INT	= 1.0;
-
-var FSIZE	= new Float32Array([]).BYTES_PER_ELEMENT;
-
-var MODE = 0;
-var PAUSED = true;
-var FIXED_DELTA = false;;
-
-// FILE SEPARATOR
-
-/* global GRID_NUM, GRID_INT */
-/* exported grid */
-
-function grid() {
-	var array = [];
-	for(var i= -GRID_NUM; i <= GRID_NUM; i++) {
-		array = array.concat([GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.5, 0.4, 0.5]);
-		array = array.concat([-GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.5, 0.4, 0.5]);
-		array = array.concat([GRID_INT * i, GRID_INT * GRID_NUM, 0.0, 0.4, 0.5, 0.5]);
-		array = array.concat([GRID_INT * i, -GRID_INT * GRID_NUM, 0.0, 0.4, 0.5, 0.5]);
-	}
-	return array;
-};
-
-// FILE SEPARATOR
-
-/* global NUM_PARTICLES */
-/* exported initialize, adjacencies */
-
-var X_HI	= 10.0;
-var X_LOW	= -10.0;
-var Y_HI	= 10.0;
-var Y_LOW	= -10.0;
-var Z_HI	= 20.0;
-var Z_LOW	= 0.0;
-
-var TORNADO_COLUMN = 1.0 / 16.0;
-
-var R_VELOCITY = 5.0;
-
-function initialize(initial_state) {
-	var count = 0;
-	for (var i = 0; i < NUM_PARTICLES; i++) {
-		var unit = Math.floor((i % 64) / 16);
-		if (unit === 0) {
-			initial_state[i * 8 + 0] = (Math.random() - 0.5) * 0.1;
-			initial_state[i * 8 + 1] = (Math.random() - 0.5) * 0.1;
-			initial_state[i * 8 + 2] = -Math.random() * 0.1;
-			initial_state[i * 8 + 3] = Math.random() - 0.5;
-			initial_state[i * 8 + 4] = Math.random() - 0.5;
-			initial_state[i * 8 + 5] = Math.random() * 0.5;
-		} else if (unit === 1) {
-			initial_state[i * 8 + 0] = X_LOW + Math.random() * (X_HI - X_LOW);
-			initial_state[i * 8 + 1] = Y_LOW + Math.random() * (Y_HI - Y_LOW);
-			initial_state[i * 8 + 2] = Z_LOW + Math.random() * (Z_HI - Z_LOW);
-			initial_state[i * 8 + 4] = ((Math.random() - 0.5) * 2.0) * R_VELOCITY;
-			initial_state[i * 8 + 5] = ((Math.random() - 0.5) * 2.0) * R_VELOCITY;
-			initial_state[i * 8 + 6] = ((Math.random() - 0.5) * 2.0) * R_VELOCITY;
-		} else if (unit === 2) {
-			// Particle must be emitted
-			initial_state[i * 8 + 3] = -2.0;
-		} else if (unit === 3) {
-			initial_state[i * 8 + 0] = -(Math.floor(count / 32) / 4) - 1.0;
-			initial_state[i * 8 + 1] = -(count % 32) / 4 - 1.0;
-			initial_state[i * 8 + 2] = 10.0;
-			count++;
-		}
-	}
-}
-
-function adjacencies(adj) {
-	var id = 0;
-	var tex_x = function(x, y) {
-		return 96 + (x % 16) * 2;
-	};
-	var tex_y = function(x, y) {
-		return y * 2 + Math.floor(x / 16);
-	};
-	for (var i = 0; i < NUM_PARTICLES; i++) {
-		var unit = Math.floor((i % 64) / 16);
-		if (unit === 3) {
-			for (var j = 0; j < 8; j++) {
-				adj[i * 8 + j] = -1;
-			}
-
-			var x = id % 32;
-			var y = Math.floor(id / 32);
-
-			if (y > 0) {
-				adj[i * 8 + 0] = tex_x(x, y - 1);
-				adj[i * 8 + 1] = tex_y(x, y - 1);
-			}
-
-			if (y < 31) {
-				adj[i * 8 + 2] = tex_x(x, y + 1);
-				adj[i * 8 + 3] = tex_y(x, y + 1);
-			}
-
-			if (x > 0) {
-				adj[i * 8 + 4] = tex_x(x - 1, y);
-				adj[i * 8 + 5] = tex_y(x - 1, y);
-			}
-
-			if (x < 31) {
-				adj[i * 8 + 6] = tex_x(x + 1, y);
-				adj[i * 8 + 7] = tex_y(x + 1, y);
-			}
-
-			id++;
-		}
-	}
-};
-
-// FILE SEPARATOR
-
-/* canvas: true, createProgram, init_system, init_camera, Stats, mat4, vec3, FSIZE, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT, NUM_PARTICLES, MODE: true, PAUSED: true, resize, dat, init_static, FIXED_DELTA */
-/* exported main */
-
-var gl;
-
-function main() {
-
-	canvas = document.getElementById('webgl');
-
-	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-
-	if (!gl.getExtension('OES_texture_float')) {
-		throw 'Your browser does not support Floating-Point Textures.';
-	}
-
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
-	gl.enable(gl.DEPTH_TEST);
-
-	// Stats
-	var stats = new Stats();
-	stats.domElement.style.position	= 'fixed';
-	stats.domElement.style.left		= '20px';
-	stats.domElement.style.top		= '20px';
-	document.body.appendChild(stats.domElement);
-
-	// dat.GUI
-	var panel = {
-		Mode: 0,
-		PausePlay: function() {
-			PAUSED = !PAUSED;
-		},
-		FixedDelta: function() {
-			FIXED_DELTA = !FIXED_DELTA;
-		},
-		fire_x: -5.0,
-		fire_y: -5.0
-	};
-	var gui = new dat.GUI();
-	gui.add(panel, 'Mode', { Euler: 0, Midpoint: 1, RK4: 2 }).onChange(function(val) {
-		MODE = val;
-	});
-	gui.add(panel, 'PausePlay');
-	gui.add(panel, 'FixedDelta');
-	gui.add(panel, 'fire_x').min(-10).max(10).step(0.05);
-	gui.add(panel, 'fire_y').min(-10).max(10).step(0.05);
-
-	// Shader Programs
-	var program_phys = createProgram(
-		document.getElementById('phys-vs').text,
-		document.getElementById('phys-fs').text);
-	var program_calc = createProgram(
-		document.getElementById('calc-vs').text,
-		document.getElementById('calc-fs').text);
-	var program_rk4o = createProgram(
-		document.getElementById('rk4o-vs').text,
-		document.getElementById('rk4o-fs').text);
-	var program_draw = createProgram(
-		document.getElementById('draw-vs').text,
-		document.getElementById('draw-fs').text);
-	var program_stat = createProgram(
-		document.getElementById('stat-vs').text,
-		document.getElementById('stat-fs').text);
-
-	var system = {};
-
-	// Set Up Render To Texture
-	init_system(system, program_phys, program_calc, program_rk4o, program_draw, program_stat);
-
-	// Set Up Static Elements
-	init_static(system, program_stat);
-
-	// Set up Camera
-	var camera = init_camera();
-
-	// Calls Physics Shader with specific input/output
-	var solve = function(source_dot_id, target_dot, dt) {
-		gl.uniform1i(program_phys.u_dot, source_dot_id);
-		gl.uniform1f(program_phys.u_dt, dt);
-
-		gl.bindFramebuffer(gl.FRAMEBUFFER, target_dot);
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-	};
-
-	var solvers = [
-		function() {
-			// Euler Method
-			solve(0, system.fb_dot1, 0.0);
-		},
-		function(dt) {
-			// Explicit Midpoint Method
-			solve(0, system.fb_dot2, 0.0);
-			solve(2, system.fb_dot1, dt / 2.0);
-		},
-		function(dt) {
-			// Runge-Kutta 4
-			solve(0, system.fb_dot1, 0.0);
-			solve(1, system.fb_dot2, dt / 2.0);
-			solve(2, system.fb_dot3, dt / 2.0);
-			solve(3, system.fb_dot4, dt);
-
-			gl.useProgram(program_rk4o);
-
-			gl.bindBuffer(gl.ARRAY_BUFFER, system.buffer_rectangle);
-			gl.vertexAttribPointer(program_rk4o.a_rectangle, 2, gl.FLOAT, false, 0, 0);
-
-			gl.bindFramebuffer(gl.FRAMEBUFFER, system.fb_dot1);
-			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-		}
-	];
-
-	var last = Date.now();
-
-	gl.useProgram(program_draw);
-	gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-
-	var frame = function() {
-		var now	= Date.now();
-		var dt	= FIXED_DELTA ? 0.01 : ((now - last) / 1000.0);
-		last 	= now;
-
-		stats.begin();
-
-		if (!PAUSED) {
-			gl.viewport(0, 0, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT);
-
-			gl.useProgram(program_phys);
-
-			// PHYSICS
-			gl.bindBuffer(gl.ARRAY_BUFFER, system.buffer_rectangle);
-			gl.vertexAttribPointer(program_phys.a_rectangle, 2, gl.FLOAT, false, 0, 0);
-
-			solvers[MODE](dt);
-
-			// CALCULATION
-			gl.useProgram(program_calc);
-			gl.bindBuffer(gl.ARRAY_BUFFER, system.buffer_rectangle);
-			gl.vertexAttribPointer(program_calc.a_rectangle, 2, gl.FLOAT, false, 0, 0);
-
-			gl.uniform2f(program_calc.u_fire, panel.fire_x, panel.fire_y);
-			gl.uniform1f(program_calc.u_dt, dt);
-
-			gl.bindFramebuffer(gl.FRAMEBUFFER, system.fb_state);
-			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-		}
-
-		// DRAWING
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-		gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-
+	camera.update = function(dt) {
 		camera.altitude += dt * ((camera.dirpad[3] ? 1 : 0) + (camera.dirpad[1] ? -1 : 0));
 		camera.direction += dt * ((camera.dirpad[2] ? 1 : 0) + (camera.dirpad[0] ? -1 : 0));
 		mat4.identity(camera.rotate);
@@ -8660,32 +8320,135 @@ function main() {
 		vec3.add(camera.position, camera.position, camera.rightr);
 		mat4.translate(camera.view, camera.rotate, camera.position);
 		mat4.multiply(camera.vp, camera.projection, camera.view);
+	};
 
-		gl.useProgram(program_draw);
-		gl.uniformMatrix4fv(program_draw.u_vp, false, camera.vp);
+	return camera;
+};
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, system.buffer_reference);
-		gl.vertexAttribPointer(program_draw.a_reference, 3, gl.FLOAT, false, 0, 0);
+// FILE SEPARATOR
 
-		gl.drawArrays(gl.POINTS, 0, NUM_PARTICLES);
+/* exported FSIZE */
 
-		gl.useProgram(program_stat);
+var ASIZE = (new Float32Array()).BYTES_PER_ELEMENT;
+var ESIZE = (new Uint16Array()).BYTES_PER_ELEMENT;
+var VSIZE = 6;;
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, system.buffer_static);
-		gl.vertexAttribPointer(program_stat.a_position, 3, gl.FLOAT, false, 6 * FSIZE, 0 * FSIZE);
-		gl.vertexAttribPointer(program_stat.a_vertcolor, 3, gl.FLOAT, false, 6 * FSIZE, 3 * FSIZE);
+// FILE SEPARATOR
 
-		gl.uniformMatrix4fv(program_stat.u_vp, false, camera.vp);
+/* exported Entity */
 
-		gl.drawArrays(gl.LINES, 0, system.axes_size + system.grid_size);
-		gl.drawArrays(gl.TRIANGLES, system.axes_size + system.grid_size, system.box_size);
-		gl.drawElements(gl.TRIANGLES, system.sphere_index_size, gl.UNSIGNED_SHORT, 0);
+function Entity(vertices, indices, model, collision) {
+	this.vertices = vertices;
+	this.indices = indices;
+	this.model = model;
+	this.collision = collision;
+};
 
-		stats.end();
+// FILE SEPARATOR
+
+/* exported grid */
+
+var GRID_NUM = 500;
+var GRID_INT = 1.0;
+
+function grid() {
+	var array = [];
+	for(var i = -GRID_NUM; i <= GRID_NUM; i++) {
+		array = array.concat([GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.5, 0.4, 0.5]);
+		array = array.concat([-GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.5, 0.4, 0.5]);
+		array = array.concat([GRID_INT * i, GRID_INT * GRID_NUM, 0.0, 0.4, 0.5, 0.5]);
+		array = array.concat([GRID_INT * i, -GRID_INT * GRID_NUM, 0.0, 0.4, 0.5, 0.5]);
+	}
+	return array;
+};
+
+// FILE SEPARATOR
+
+/* global dat, mat4 */
+/* global createProgram, resize */
+/* global Buffers, Tracer, Entity, grid, init_camera */
+/* exported main, canvas, gl, program */
+
+var canvas;
+var gl;
+
+function main() {
+	canvas = document.getElementById('webgl');
+	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+	var program_static = createProgram(document.getElementById('static-vs').text, document.getElementById('static-fs').text);
+	var program_image = createProgram(document.getElementById('image-vs').text, document.getElementById('image-fs').text);
+
+	gl.useProgram(program_static);
+	var buffers	= new Buffers(program_static);
+	gl.useProgram(program_image);
+	var tracer	= new Tracer(program_image);
+
+	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.enable(gl.DEPTH_TEST);
+
+	// Set up Camera
+	var camera = init_camera();
+
+	// Geometry
+	var floor = new Entity(grid(), undefined, mat4.create(), undefined);
+	buffers.arrayDraw(floor, 'LINES');
+
+	buffers.populate();
+
+	var flag = false;
+
+	// dat.GUI
+	var panel = {
+		Snap: function() {
+			flag = true;
+		}
+	};
+	var gui = new dat.GUI();
+	gui.add(panel, 'Snap');
+
+	gl.useProgram(program_static);
+
+	var last = Date.now();
+
+	var frame = function() {
+		var now	= Date.now();
+		var dt	= (now - last) / 1000.0;
+		last 	= now;
+
+		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+
+		gl.useProgram(program_image);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, tracer.buffer_rectangle);
+		gl.vertexAttribPointer(tracer.a_rectangle, 2, gl.FLOAT, false, 4 * ASIZE, 0 * ASIZE);
+		gl.vertexAttribPointer(tracer.a_texcoord, 2, gl.FLOAT, false, 4 * ASIZE, 2 * ASIZE);
+
+		if (flag) {
+			flag = false;
+			tracer.snap(camera);
+		}
+
+		gl.viewport(gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+		tracer.draw();
+
+		gl.useProgram(program_static);
+		gl.viewport(0, 0, gl.drawingBufferWidth/2, gl.drawingBufferHeight);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex)
+		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 6 * ASIZE, 0 * ASIZE);
+		gl.vertexAttribPointer(buffers.a_color, 3, gl.FLOAT, false, 6 * ASIZE, 3 * ASIZE);
+
+		camera.update(dt);
+		buffers.draw(camera);
+
 		window.requestAnimFrame(frame);
 	};
 
 	resize();
+
+	gl.useProgram(program_image);
+	tracer.snap(camera);
 
 	window.requestAnimFrame(frame);
 };
@@ -8750,242 +8513,84 @@ function sphere(offset, x, y, z) {
 
 // FILE SEPARATOR
 
-/* exported: init_static */
-function init_static(system, program_stat) {
-	system.axes_size = 6;
-	system.box_size = 36;
+/* global this, gl */
+/* global mat4 */
+/* global ASIZE, ESIZE, VSIZE */
+/* exported init_buffers */
 
-	var grid_vertices = grid();
-	system.grid_size = grid_vertices.length / 6;
-
-	var spherical_bound = sphere(system.grid_size + system.axes_size + system.box_size, -5.0, -5.0, 7.5);
-
-	var values = new Float32Array([
-		// Axes
-		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-		2.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-		0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-		0.0, 2.0, 0.0, 0.0, 1.0, 0.0,
-		0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-		0.0, 0.0, 2.0, 0.0, 0.0, 1.0,
-	].concat(grid_vertices).concat(box(5.0, 5.0, 7.5)).concat(spherical_bound.vertices));
-
-	var indices = new Uint16Array(spherical_bound.indices);
-	system.sphere_index_size = spherical_bound.indices.length;
-
-	system.buffer_static = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, system.buffer_static);
-	gl.bufferData(gl.ARRAY_BUFFER, values, gl.STATIC_DRAW);
-	gl.vertexAttribPointer(program_stat.a_position, 3, gl.FLOAT, false, 6 * FSIZE, 0 * FSIZE);
-	gl.vertexAttribPointer(program_stat.a_vertcolor, 3, gl.FLOAT, false, 6 * FSIZE, 3 * FSIZE);
-	gl.enableVertexAttribArray(program_stat.a_position);
-	gl.enableVertexAttribArray(program_stat.a_vertcolor);
-
-	var buffer_static_elements = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer_static_elements);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-};
-
-// FILE SEPARATOR
-
-/* global gl: true, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT, NUM_PARTICLES, PARTICLES_PER_ROW, NUM_SLOTS, UNITS, FSIZE, grid, box, initialize, adjacencies */
-/* exported init_system */
-
-function init_system(system, program_phys, program_calc, program_rk4o, program_draw, program_stat) {
-	// Uniforms
-	program_phys.u_dt		= gl.getUniformLocation(program_phys, 'u_dt');
-	program_calc.u_dt		= gl.getUniformLocation(program_calc, 'u_dt');
-	program_phys.u_viewport	= gl.getUniformLocation(program_phys, 'u_viewport');
-	program_calc.u_viewport	= gl.getUniformLocation(program_calc, 'u_viewport');
-	program_rk4o.u_viewport	= gl.getUniformLocation(program_rk4o, 'u_viewport');
-	program_draw.u_viewport	= gl.getUniformLocation(program_draw, 'u_viewport');
-
-	program_phys.u_state	= gl.getUniformLocation(program_phys, 'u_state');
-	program_calc.u_state	= gl.getUniformLocation(program_calc, 'u_state');
-	program_phys.u_dot		= gl.getUniformLocation(program_phys, 'u_dot');
-	program_calc.u_dot		= gl.getUniformLocation(program_calc, 'u_dot');
-	program_draw.u_state	= gl.getUniformLocation(program_draw, 'u_state');
-
-	// Runge-Kutta 4th Order
-	program_rk4o.u_dot1		= gl.getUniformLocation(program_rk4o, 'u_dot1');
-	program_rk4o.u_dot2		= gl.getUniformLocation(program_rk4o, 'u_dot2');
-	program_rk4o.u_dot3		= gl.getUniformLocation(program_rk4o, 'u_dot3');
-	program_rk4o.u_dot4		= gl.getUniformLocation(program_rk4o, 'u_dot4');
-
-	program_draw.u_vp		= gl.getUniformLocation(program_draw, 'u_vp');
-	program_stat.u_vp		= gl.getUniformLocation(program_stat, 'u_vp');
-
-	program_calc.u_fire		= gl.getUniformLocation(program_calc, 'u_fire');
-
-	program_phys.u_adjacencies = gl.getUniformLocation(program_phys, 'u_adjacencies');
-
-	gl.useProgram(program_phys);
-	gl.uniform2f(program_phys.u_viewport, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT);
-	gl.useProgram(program_calc);
-	gl.uniform2f(program_calc.u_viewport, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT);
-	gl.useProgram(program_rk4o);
-	gl.uniform2f(program_rk4o.u_viewport, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT);
-	gl.useProgram(program_draw);
-	gl.uniform2f(program_draw.u_viewport, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT);
-
-	// Attributes
-	program_phys.a_rectangle = gl.getAttribLocation(program_phys, 'a_rectangle');
-	program_calc.a_rectancle = gl.getAttribLocation(program_calc, 'a_rectangle');
-	program_rk4o.a_rectancle = gl.getAttribLocation(program_rk4o, 'a_rectangle');
-	program_draw.a_reference = gl.getAttribLocation(program_draw, 'a_reference');
-	program_stat.a_position = gl.getAttribLocation(program_stat, 'a_position');
-	program_stat.a_vertcolor = gl.getAttribLocation(program_stat, 'a_vertcolor');
-
-	var initial_state	= new Float32Array(4 * NUM_PARTICLES * NUM_SLOTS);
-	var adjacent		= new Float32Array(4 * NUM_PARTICLES * NUM_SLOTS);
-
-	initialize(initial_state);
-	adjacencies(adjacent);
-
-	// Textures
-	var texture_adjacent = gl.createTexture();
-	gl.activeTexture(gl.TEXTURE5);
-	gl.bindTexture(gl.TEXTURE_2D, texture_adjacent);
-
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT, 0, gl.RGBA, gl.FLOAT, adjacent);
-
-	gl.useProgram(program_phys);
-	gl.uniform1i(program_phys.u_adjacencies, 5);
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-	var texture_state = gl.createTexture();
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, texture_state);
-
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT, 0, gl.RGBA, gl.FLOAT, initial_state);
-
-	gl.useProgram(program_draw);
-	gl.uniform1i(program_draw.u_state, 0);
-	gl.useProgram(program_calc);
-	gl.uniform1i(program_calc.u_state, 0);
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-	var texture_dot1 = gl.createTexture();
-	gl.activeTexture(gl.TEXTURE1);
-	gl.bindTexture(gl.TEXTURE_2D, texture_dot1);
-
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT, 0, gl.RGBA, gl.FLOAT, initial_state);
-
-	gl.useProgram(program_phys);
-	gl.uniform1i(program_phys.u_dot, 1);
-	gl.useProgram(program_calc);
-	gl.uniform1i(program_calc.u_dot, 1);
-	gl.useProgram(program_rk4o);
-	gl.uniform1i(program_rk4o.u_dot1, 1);
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-	var texture_dot2 = gl.createTexture();
-	gl.activeTexture(gl.TEXTURE2);
-	gl.bindTexture(gl.TEXTURE_2D, texture_dot2);
-
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT, 0, gl.RGBA, gl.FLOAT, initial_state);
-
-	gl.useProgram(program_rk4o);
-	gl.uniform1i(program_rk4o.u_dot2, 2);
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-	var texture_dot3 = gl.createTexture();
-	gl.activeTexture(gl.TEXTURE3);
-	gl.bindTexture(gl.TEXTURE_2D, texture_dot3);
-
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT, 0, gl.RGBA, gl.FLOAT, initial_state);
-
-	gl.useProgram(program_rk4o);
-	gl.uniform1i(program_rk4o.u_dot3, 3);
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-	var texture_dot4 = gl.createTexture();
-	gl.activeTexture(gl.TEXTURE4);
-	gl.bindTexture(gl.TEXTURE_2D, texture_dot4);
-
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, STATE_TEXTURE_WIDTH, STATE_TEXTURE_HEIGHT, 0, gl.RGBA, gl.FLOAT, initial_state);
-
-	gl.useProgram(program_rk4o);
-	gl.uniform1i(program_rk4o.u_dot4, 4);
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-	// Framebuffers
-	system.fb_state = gl.createFramebuffer();
-	gl.bindFramebuffer(gl.FRAMEBUFFER, system.fb_state);
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_state, 0);
-
-	system.fb_dot1 = gl.createFramebuffer();
-	gl.bindFramebuffer(gl.FRAMEBUFFER, system.fb_dot1);
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_dot1, 0);
-
-	system.fb_dot2 = gl.createFramebuffer();
-	gl.bindFramebuffer(gl.FRAMEBUFFER, system.fb_dot2);
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_dot2, 0);
-
-	system.fb_dot3 = gl.createFramebuffer();
-	gl.bindFramebuffer(gl.FRAMEBUFFER, system.fb_dot3);
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_dot3, 0);
-
-	system.fb_dot4 = gl.createFramebuffer();
-	gl.bindFramebuffer(gl.FRAMEBUFFER, system.fb_dot4);
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture_dot4, 0);
-
-	var reference	= new Float32Array(NUM_PARTICLES * 3);
-	var interval	= 1.0 / PARTICLES_PER_ROW;
-
-	for (var i = 0; i < NUM_PARTICLES; i++) {
-		reference[i * 3]		= interval * ~~(i % PARTICLES_PER_ROW);
-		reference[i * 3 + 1]	= interval * ~~(i / PARTICLES_PER_ROW);
-		reference[i * 3 + 2]	= ~~((i % PARTICLES_PER_ROW) / (PARTICLES_PER_ROW / UNITS));
+function trace(width, height, big_width, big_height) {
+	var image = new Uint8Array(big_width * big_height * 3);
+	for (var j = 0; j < height; j++) {
+		for (var i = 0; i < width; i++) {
+			image[i * 3 + 0 + j * big_width * 3] = Math.floor(Math.random() * 256);
+			image[i * 3 + 1 + j * big_width * 3] = Math.floor(Math.random() * 256);
+			image[i * 3 + 2 + j * big_width * 3] = Math.floor(Math.random() * 256);
+		}
 	}
-
-	system.buffer_reference = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, system.buffer_reference);
-	gl.bufferData(gl.ARRAY_BUFFER, reference, gl.STATIC_DRAW);
-	gl.enableVertexAttribArray(program_draw.a_reference);
-
-	// Make a rectangle that draws over the whole buffer
-	system.buffer_rectangle = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, system.buffer_rectangle);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-		-1.0, -1.0,
-		 1.0, -1.0,
-		-1.0,  1.0,
-		 1.0,  1.0,
-	]), gl.STATIC_DRAW);
-	gl.enableVertexAttribArray(program_phys.a_rectangle);
-	gl.enableVertexAttribArray(program_calc.a_rectangle);
-	gl.enableVertexAttribArray(program_rk4o.a_rectangle);
+	return image;
 };
+
+function Tracer(program) {
+	this.a_rectangle = gl.getAttribLocation(program, 'a_rectangle');
+	this.a_texcoord = gl.getAttribLocation(program, 'a_texcoord');
+
+	this.u_image = gl.getUniformLocation(program, 'u_image');
+
+	gl.uniform1i(this.u_image, 0);
+	
+	this.buffer_rectangle = gl.createBuffer();
+
+	gl.enableVertexAttribArray(this.a_rectangle);
+}
+
+Tracer.prototype.snap = function() {
+	var width = gl.drawingBufferWidth / 2;
+	var height = gl.drawingBufferHeight;
+
+	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
+	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));
+
+	var image = trace(width, height, big_width, big_height);
+
+	var tex_image = gl.createTexture();
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, tex_image);
+
+	gl.texImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGB,
+		big_width,
+		big_height,
+		0,
+		gl.RGB,
+		gl.UNSIGNED_BYTE,
+		image
+	);
+
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer_rectangle);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+		-1.0, -1.0, 0.0, 0.0,
+		-1.0, 1.0, 0.0, height / big_height,
+		1.0, -1.0, width / big_width, 0.0,
+		1.0, 1.0, width / big_width, height / big_height
+	]), gl.STATIC_DRAW);
+};
+
+Tracer.prototype.draw = function() {
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+};;
 
 // FILE SEPARATOR
 
 /* global gl: true, canvas: true, mat4, projection */
 /* exported createShader, createProgram, resize */
+
 function createShader(source, type) {
 
 	var shader = gl.createShader( type );
@@ -8999,7 +8604,6 @@ function createShader(source, type) {
 	return shader;
 }
 
-// Creates a shader program and creates / links shaders
 function createProgram(vertexSource, fragmentSource) {
 
 	var vs = createShader( vertexSource, gl.VERTEX_SHADER );
@@ -9018,8 +8622,12 @@ function createProgram(vertexSource, fragmentSource) {
 }
 
 function resize() {
-	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
-	mat4.perspective(projection, Math.PI / 3, gl.drawingBufferWidth/gl.drawingBufferHeight, 0.1, 100.0);
+	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+	mat4.perspective(projection, Math.PI / 3, gl.drawingBufferWidth / gl.drawingBufferHeight / 2, 0.1, 100.0);
+}
+
+Math.baseLog = function(x, y) {
+    return Math.log(y) / Math.log(x);
 }

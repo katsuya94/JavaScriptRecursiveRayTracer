@@ -1,35 +1,56 @@
 <html>
 <head>
-	<script src="particles.js"></script>
+	<script src="ray.js"></script>
+
 	<script id="static-vs" type="x-shader/x-vertex">
 
 attribute vec4 a_position;
+attribute vec4 a_color;
+
+uniform mat4 u_mvp;
+
+varying vec4 v_color;
 
 void main() {
-	gl_Position = a_position;
+	gl_Position = u_mvp * a_position;
+	v_color = a_color;
 }
 
 	</script>
 	<script id="static-fs" type="x-shader/x-fragment">
 
+precision mediump float;
+
+varying vec4 v_color;
+
 void main() {
-	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+	gl_FragColor = v_color;
 }
 
 	</script>
 	<script id="image-vs" type="x-shader/x-vertex">
 
-attribute vec2 a_position;
+attribute vec2 a_rectangle;
+attribute vec2 a_texcoord;
+
+varying vec2 v_texcoord;
 
 void main() {
-	gl_Position = a_position;
+	gl_Position = vec4(a_rectangle, 0.0, 1.0);
+	v_texcoord = a_texcoord;
 }
 
 	</script>
 	<script id="image-fs" type="x-shader/x-fragment">
 
+precision mediump float;
+
+uniform sampler2D u_image;
+
+varying vec2 v_texcoord;
+
 void main() {
-	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+	gl_FragColor = texture2D(u_image, v_texcoord);
 }
 
 	</script>

@@ -1,6 +1,7 @@
 /* jshint strict: false */
 /* global gl: true, canvas: true, mat4, projection */
 /* exported createShader, createProgram, resize */
+
 function createShader(source, type) {
 
 	var shader = gl.createShader( type );
@@ -14,7 +15,6 @@ function createShader(source, type) {
 	return shader;
 }
 
-// Creates a shader program and creates / links shaders
 function createProgram(vertexSource, fragmentSource) {
 
 	var vs = createShader( vertexSource, gl.VERTEX_SHADER );
@@ -33,8 +33,12 @@ function createProgram(vertexSource, fragmentSource) {
 }
 
 function resize() {
-	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
-	mat4.perspective(projection, Math.PI / 3, gl.drawingBufferWidth/gl.drawingBufferHeight, 0.1, 100.0);
+	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+	mat4.perspective(projection, Math.PI / 3, gl.drawingBufferWidth / gl.drawingBufferHeight / 2, 0.1, 100.0);
+}
+
+Math.baseLog = function(x, y) {
+    return Math.log(y) / Math.log(x);
 }
