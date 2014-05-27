@@ -36,7 +36,7 @@ function resize() {
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-	mat4.perspective(projection, Math.PI / 3, gl.drawingBufferWidth / gl.drawingBufferHeight / 2, 0.1, 100.0);
+	mat4.perspective(projection, Math.PI / 3, gl.drawingBufferWidth / gl.drawingBufferHeight / 2, 1.0, 100.0);
 }
 
 Math.baseLog = function(x, y) {

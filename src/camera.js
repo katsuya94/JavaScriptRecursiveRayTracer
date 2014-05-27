@@ -25,12 +25,14 @@ function init_camera() {
 	vec3.set(camera.front, 0.0, 0.0, 1.0);
 
 	camera.rotate = mat4.create();
+
 	camera.adjoint = mat4.create();
 
 	camera.position = vec3.create();
 	vec3.set(camera.position, -10.0, -10.0, -20.0);
 
 	camera.vp = mat4.create();
+	camera._vp = mat4.create();
 
 	camera.dirpad = [false, false, false, false];
 	camera.wasd = [false, false, false, false];

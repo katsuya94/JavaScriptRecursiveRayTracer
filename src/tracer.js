@@ -4,17 +4,19 @@
 /* global ASIZE, ESIZE, VSIZE */
 /* exported init_buffers */
 
-function trace(width, height, big_width, big_height) {
-	var image = new Uint8Array(big_width * big_height * 3);
-	for (var j = 0; j < height; j++) {
-		for (var i = 0; i < width; i++) {
-			image[i * 3 + 0 + j * big_width * 3] = Math.floor(Math.random() * 256);
-			image[i * 3 + 1 + j * big_width * 3] = Math.floor(Math.random() * 256);
-			image[i * 3 + 2 + j * big_width * 3] = Math.floor(Math.random() * 256);
-		}
-	}
-	return image;
-};
+var X = vec4.fromValues(1.0, 0.0, 0.0, 0.0);
+var _X = vec4.fromValues(-1.0, 0.0, 0.0, 0.0);
+var Y = vec4.fromValues(0.0, 1.0, 0.0, 0.0);
+var _Y = vec4.fromValues(0.0, -1.0, 0.0, 0.0);
+var Z = vec4.fromValues(0.0, 0.0, 1.0, 0.0);
+var _Z = vec4.fromValues(0.0, 0.0, -1.0, 0.0);
+
+xmax = 0, xmin = 0, ymax = 0, ymin = 0;
+
+function Ray(origin, direction) {
+	this.o = origin;
+	this.d = direction;
+}
 
 function Tracer(program) {
 	this.a_rectangle = gl.getAttribLocation(program, 'a_rectangle');
@@ -29,14 +31,47 @@ function Tracer(program) {
 	gl.enableVertexAttribArray(this.a_rectangle);
 }
 
-Tracer.prototype.snap = function() {
+Tracer.prototype.trace = function(image, offset, camera, ray) {
+	var t = ray.o[2] / vec4.dot(ray.d, _Z);
+	var hit = vec4.create();
+	vec4.scaleAndAdd(hit, ray.o, ray.d, t);
+
+	image[offset] = ((Math.floor(hit[0]) + Math.floor(hit[1])) % 2) ? 255 : 0;
+	image[offset + 1] = Math.max(0, (1 - Math.sqrt(hit[0] * hit[0] + hit[1] * hit[1]))) * 255;
+}
+
+Tracer.prototype.rasterize = function(camera, width, height, big_width, big_height) {
+	var image = new Uint8Array(big_width * big_height * 3);
+	for (var j = 0; j < height; j++) {
+		for (var i = 0; i < width; i++) {
+			var r = new Ray(
+				vec4.fromValues(
+					2 * i / width - 1 + 1 / width,
+					2 * j / height - 1 + 1 / height,
+					-1.0,
+					1.0),
+				vec4.fromValues(0.0, 0.0, 1.0, 0.0));
+
+			vec4.transformMat4(r.o, r.o, camera._vp);
+			vec4.transformMat4(r.d, r.d, camera._vp);
+			vec4.normalize(r.d, r.d);
+
+			this.trace(image, i * 3 + j * big_width * 3, camera, r);
+		}
+	}
+	return image;
+};
+
+Tracer.prototype.snap = function(camera) {
 	var width = gl.drawingBufferWidth / 2;
 	var height = gl.drawingBufferHeight;
+
+	mat4.invert(camera._vp, camera.vp)
 
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));
 
-	var image = trace(width, height, big_width, big_height);
+	var image = this.rasterize(camera, width, height, big_width, big_height);
 
 	var tex_image = gl.createTexture();
 	gl.activeTexture(gl.TEXTURE0);

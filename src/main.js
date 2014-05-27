@@ -29,9 +29,24 @@ function main() {
 	var floor = new Entity(grid(), undefined, mat4.create(), undefined);
 	buffers.arrayDraw(floor, 'LINES');
 
+	var axes = new Entity([
+		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
+
+		0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+		1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+		0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+
+		0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+		0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
+		1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+	], undefined, mat4.create(), undefined);
+	buffers.arrayDraw(axes, 'TRIANGLES');
+
 	buffers.populate();
 
-	var flag = false;
+	var flag = true;
 
 	// dat.GUI
 	var panel = {
@@ -53,20 +68,6 @@ function main() {
 
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
-		gl.useProgram(program_image);
-
-		gl.bindBuffer(gl.ARRAY_BUFFER, tracer.buffer_rectangle);
-		gl.vertexAttribPointer(tracer.a_rectangle, 2, gl.FLOAT, false, 4 * ASIZE, 0 * ASIZE);
-		gl.vertexAttribPointer(tracer.a_texcoord, 2, gl.FLOAT, false, 4 * ASIZE, 2 * ASIZE);
-
-		if (flag) {
-			flag = false;
-			tracer.snap(camera);
-		}
-
-		gl.viewport(gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
-		tracer.draw();
-
 		gl.useProgram(program_static);
 		gl.viewport(0, 0, gl.drawingBufferWidth/2, gl.drawingBufferHeight);
 
@@ -77,13 +78,24 @@ function main() {
 		camera.update(dt);
 		buffers.draw(camera);
 
+		if (flag) {
+			flag = false;
+			tracer.snap(camera);
+		}
+
+		gl.useProgram(program_image);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, tracer.buffer_rectangle);
+		gl.vertexAttribPointer(tracer.a_rectangle, 2, gl.FLOAT, false, 4 * ASIZE, 0 * ASIZE);
+		gl.vertexAttribPointer(tracer.a_texcoord, 2, gl.FLOAT, false, 4 * ASIZE, 2 * ASIZE);
+
+		gl.viewport(gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+		tracer.draw();
+
 		window.requestAnimFrame(frame);
 	};
 
 	resize();
-
-	gl.useProgram(program_image);
-	tracer.snap(camera);
 
 	window.requestAnimFrame(frame);
 }
