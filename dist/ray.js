@@ -8196,6 +8196,7 @@ function init_camera() {
 	var camera = {};
 
 	camera.view = mat4.create();
+
 	camera.altitude = -Math.PI / 4;
 	camera.direction = -3 * Math.PI / 4;
 
@@ -8215,7 +8216,6 @@ function init_camera() {
 	camera.rotate = mat4.create();
 
 	camera.adjoint = mat4.create();
-	camera._adjoint = mat4.create();
 
 	camera.position = vec3.create();
 	vec3.set(camera.position, -10.0, -10.0, -20.0);
@@ -8560,44 +8560,72 @@ function Tracer(program) {
 	gl.enableVertexAttribArray(this.a_rectangle);
 }
 
-Tracer.prototype.trace = function(image, offset, camera, ray) {
+Tracer.prototype.trace = function(pixel, ray, camera) {
 	var t = ray.o[2] / vec4.dot(ray.d, _Z);
+
+	if (t < 0) return;
+
 	var hit = vec4.create();
 	vec4.scaleAndAdd(hit, ray.o, ray.d, t);
 
-	image[offset] = ((Math.floor(hit[0]) + Math.floor(hit[1])) % 2) ? 255 : 0;
-	image[offset + 1] = Math.max(0, (1 - Math.sqrt(hit[0] * hit[0] + hit[1] * hit[1]))) * 255;
+	var id = ((Math.floor(hit[0] / hit[3]) + Math.floor(hit[1] / hit[3])) % 3 + 3) % 3;
+	if (id === 0) pixel[0] += 255;
+	if (id === 1) pixel[1] += 255;
+	if (id === 2) pixel[2] += 255;
+}
+
+Tracer.prototype.sample = function(pixel, x, y, camera) {
+	var r = new Ray(
+		vec4.fromValues(x, y, 1.0, 1.0),
+		vec4.fromValues(0.0, 0.0, -1.0, 0.0));
+
+	vec4.transformMat4(r.o, r.o, camera._vp);
+	vec4.transformMat4(r.d, r.d, camera._vp);
+	vec4.normalize(r.d, r.d);
+
+	this.trace(pixel, r, camera);
 }
 
 Tracer.prototype.rasterize = function(camera, width, height, big_width, big_height) {
+	var pixel = new Uint16Array(3);
 	var image = new Uint8Array(big_width * big_height * 3);
 	for (var j = 0; j < height; j++) {
 		for (var i = 0; i < width; i++) {
-			var r = new Ray(
-				vec4.fromValues(
-					2 * i / width - 1 + 1 / width,
-					2 * j / height - 1 + 1 / height,
-					-1.0,
-					1.0),
-				vec4.fromValues(0.0, 0.0, 1.0, 0.0));
+			pixel[0] = 0;
+			pixel[1] = 0;
+			pixel[2] = 0;
 
-			vec4.transformMat4(r.o, r.o, camera._vp);
-			vec4.transformMat4(r.d, r.d, camera._vp);
-			vec4.transformMat4(r.d, r.d, camera._adjoint);
-			vec4.normalize(r.d, r.d);
+			var offset = i * 3 + j * big_width * 3;
 
-			this.trace(image, i * 3 + j * big_width * 3, camera, r);
+			var x = 2 * i / width - 1 + 1 / width;
+			var y = 2 * j / height - 1 + 1 / height;
+
+			if (true) {
+				this.sample(pixel, x + Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
+				this.sample(pixel, x + Math.random() * (1 / width), y - Math.random() * (1 / height), camera);
+				this.sample(pixel, x - Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
+				this.sample(pixel, x + Math.random() * (1 / width), y - Math.random() * (1 / height), camera);
+
+				image[offset + 0] = pixel[0] / 4;
+				image[offset + 1] = pixel[1] / 4;
+				image[offset + 2] = pixel[2] / 4;
+			} else {
+				this.sample(pixel, x, y, camera);
+
+				image[offset + 0] = pixel[0];
+				image[offset + 1] = pixel[1];
+				image[offset + 2] = pixel[2];
+			}
 		}
 	}
 	return image;
 };
 
 Tracer.prototype.snap = function(camera) {
-	var width = gl.drawingBufferWidth / 2;
-	var height = gl.drawingBufferHeight;
+	var width = gl.drawingBufferWidth / 2 / 4;
+	var height = gl.drawingBufferHeight / 4;
 
-	mat4.invert(camera._vp, camera.vp)
-	mat4.invert(camera._adjoint, camera.adjoint);
+	mat4.invert(camera._vp, camera.vp);
 
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));

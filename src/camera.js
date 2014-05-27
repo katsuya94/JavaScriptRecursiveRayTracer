@@ -8,6 +8,7 @@ function init_camera() {
 	var camera = {};
 
 	camera.view = mat4.create();
+
 	camera.altitude = -Math.PI / 4;
 	camera.direction = -3 * Math.PI / 4;
 
