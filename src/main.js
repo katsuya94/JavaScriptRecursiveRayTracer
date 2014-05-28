@@ -26,8 +26,15 @@ function main() {
 	var camera = init_camera();
 
 	// Geometry
-	var floor = new Entity(grid(), undefined, mat4.create(), undefined);
+	var floor = new Entity(grid(), undefined, mat4.create(), function plane(ray) {
+		var t = vec4.dot(ray.p, Z) / vec4.dot(ray.u, _Z);
+		if (t < 0) return null;
+		var origin = vec4.create();
+		vec4.scaleAndAdd(origin, ray.p, ray.u, t);
+		return new Hit(ray, origin, vec4.clone(Z), vec4.clone(ray.u), PEWTER);
+	});
 	buffers.arrayDraw(floor, 'LINES');
+	tracer.register(floor);
 
 	var axes = new Entity([
 		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
