@@ -27,11 +27,11 @@ function main() {
 
 	// Geometry
 	var floor = new Entity(grid(), undefined, mat4.create(), function plane(ray) {
-		var t = vec4.dot(ray.p, Z) / vec4.dot(ray.u, _Z);
+		var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
 		if (t < 0) return null;
-		var origin = vec4.create();
+		var origin = vec3.create();
 		vec4.scaleAndAdd(origin, ray.p, ray.u, t);
-		return new Hit(ray, origin, vec4.clone(Z), vec4.clone(ray.u), PEWTER);
+		return new Hit(ray, origin, vec3.clone(Z), vec3.clone(ray.u), PEWTER);
 	});
 	buffers.arrayDraw(floor, 'LINES');
 	tracer.register(floor);

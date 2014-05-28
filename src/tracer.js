@@ -66,8 +66,8 @@ var propagate_temp = vec3.create();
 Tracer.prototype.propagate = function(pixel, hit) {
 	vec3.add(pixel, pixel, hit.mat.d);
 	vec3.add(pixel, pixel, hit.mat.a);
-	if (Math.floor(hit.o[0] / hit.o[3]) % 2 === 0) pixel[0] += 0.5;
-	if (Math.floor(hit.o[1] / hit.o[3]) % 2 === 0) pixel[1] += 0.5;
+	if (Math.floor(hit.o[0]) % 2 === 0) pixel[0] += 0.5;
+	if (Math.floor(hit.o[1]) % 2 === 0) pixel[1] += 0.5;
 }
 
 Tracer.prototype.trace = function(pixel, ray) {
@@ -97,7 +97,9 @@ Tracer.prototype.sample = function(pixel, x, y, camera) {
 	vec4.transformMat4(p, p, camera._vp);
 	vec4.transformMat4(u, u, camera._vp);
 
-	vec4.normalize(u, u);
+	p = vec3.fromValues(p[0] / p[3], p[1] / p[3], p[2] / p[3])
+	u = vec3.clone(u);
+	vec3.normalize(u, u);
 
 	var r = new Ray(p, u);
 
