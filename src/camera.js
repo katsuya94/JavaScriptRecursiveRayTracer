@@ -27,6 +27,7 @@ function init_camera() {
 	camera.dirpad = [false, false, false, false];
 	camera.wasd = [false, false, false, false];
 	camera.qe = [false, false];
+	camera.zx = [false, false];
 
 	window.onkeydown = function(e) {
 		var key = e.keyCode ? e.keyCode : e.which;
@@ -60,6 +61,12 @@ function init_camera() {
 			break;
 		case 69:
 			camera.qe[1] = true;
+			break;
+		case 90:
+			camera.zx[0] = true;
+			break;
+		case 88:
+			camera.zx[1] = true;
 			break;
 		case 112:
 			document.getElementById('help').style.display = 'block';
@@ -100,6 +107,12 @@ function init_camera() {
 		case 69:
 			camera.qe[1] = false;
 			break;
+		case 90:
+			camera.zx[0] = false;
+			break;
+		case 88:
+			camera.zx[1] = false;
+			break;
 		case 112:
 			document.getElementById('help').style.display = 'none';
 			break;
@@ -109,9 +122,10 @@ function init_camera() {
 	camera.update = function(dt) {
 		var d_pitch = dt * ((camera.dirpad[1] ? 1 : 0) + (camera.dirpad[3] ? -1 : 0));
 		var d_yaw = dt * ((camera.dirpad[0] ? 1 : 0) + (camera.dirpad[2] ? -1 : 0));
-		var d_roll = dt * ((camera.qe[1] ? 10 : 0) + (camera.qe[0] ? -10 : 0)) * 0.2;
+		var d_roll = dt * ((camera.qe[1] ? 1 : 0) + (camera.qe[0] ? -1 : 0));
 		var d_advance = dt * ((camera.wasd[1] ? 10 : 0) + (camera.wasd[3] ? -10 : 0));
 		var d_strafe = dt * ((camera.wasd[2] ? 10 : 0) + (camera.wasd[0] ? -10 : 0));
+		var d_ascend = dt * ((camera.zx[1] ? 10 : 0) + (camera.zx[0] ? -10 : 0));
 
 		quat.rotateX(camera.rotate, camera.rotate, d_pitch);
 		quat.rotateY(camera.rotate, camera.rotate, d_roll);
@@ -121,9 +135,9 @@ function init_camera() {
 		vec3.transformQuat(camera.front_r, camera.front, camera.rotate);
 		vec3.transformQuat(camera.right_r, camera.right, camera.rotate);
 
-		camera.position[0] += camera.front_r[0] * d_advance + camera.right_r[0] * d_strafe;
-		camera.position[1] += camera.front_r[1] * d_advance + camera.right_r[1] * d_strafe;
-		camera.position[2] += camera.front_r[2] * d_advance + camera.right_r[2] * d_strafe;
+		camera.position[0] += camera.front_r[0] * d_advance + camera.right_r[0] * d_strafe + camera.up_r[0] * d_ascend;
+		camera.position[1] += camera.front_r[1] * d_advance + camera.right_r[1] * d_strafe + camera.up_r[1] * d_ascend;
+		camera.position[2] += camera.front_r[2] * d_advance + camera.right_r[2] * d_strafe + camera.up_r[2] * d_ascend;
 
 		vec3.add(camera.center, camera.position, camera.front_r);
 		
