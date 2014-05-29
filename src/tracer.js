@@ -48,10 +48,8 @@ var BLUE_PLASTIC = new Material(
 	100.0);
 
 function Hit(ray, origin, normal, material) {
-	var x = origin[0] - ray.p[0];
-	var y = origin[1] - ray.p[1];
-	var z = origin[2] - ray.p[2];
-	this.distance = x * x + y * y + z * z;
+	this.d = vec3.create();
+	vec3.sub(this.d, ray.p, origin);
 	this.o = origin;
 	this.n = normal;
 	this.i = vec3.clone(ray.u);
@@ -122,16 +120,25 @@ Tracer.prototype.propagate = function(pixel, hit) {
 Tracer.prototype.trace = function(pixel, ray) {
 	var close = null;
 	for (var i = 0; i < this.entities.length; i++) {
-		var inverse_model = mat4.create();
-		mat4.invert(inverse_model, this.entities[i].model);
-		var model_ray = new Ray(vec3.clone(ray.p), vec3.clone(ray.u));
-		vec3.transformMat4(model_ray.p, model_ray.p, inverse_model);
-		//vec3.transformMat4(model_ray.u, model_ray.u, this.entities[i].model);
+		var e = this.entities[i];
+		var model_ray = new Ray(vec4.fromValues(ray.p[0], ray.p[1], ray.p[2], 1), vec3.fromValues(ray.u[0], ray.u[1], ray.u[2], 0));
+		vec4.transformMat4(model_ray.p, model_ray.p, e.inverse_model);
+		vec4.transformMat4(model_ray.u, model_ray.u, e.transpose_model);
 
 		var h = this.entities[i].hit(model_ray);
+
 		if (h) {
+			h.o = vec4.fromValues(h.o[0], h.o[1], h.o[2], 1);
+			h.n = vec4.fromValues(h.n[0], h.n[1], h.n[2], 0);
+			h.i = vec4.fromValues(h.i[0], h.i[1], h.i[2], 0);
+			h.d = vec4.fromValues(h.d[0], h.d[1], h.d[2], 0);
+
+			vec4.transformMat4(h.o, h.o, e.model);
+			vec4.transformMat4(h.n, h.n, e.transpose_inverse_model);
+			vec4.transformMat4(h.i, h.i, e.transpose_inverse_model);
+			vec4.transformMat4(h.d, h.d, e.transpose_inverse_model);
 			if (close) {
-				if (h.distance < close.distance) {
+				if (vec3.len(h.d) < vec3.len(close.d)) {
 					close = h;
 				}
 			} else {
