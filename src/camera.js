@@ -1,39 +1,28 @@
 /* jshint strict: false */
 /* global mat4, vec3 */
-/* exported init_camera, projection */
+/* exported init_camera */
 
 var projection;
 
 function init_camera() {
-	var camera = {};
+	camera = {};
+	camera.up = vec3.fromValues(0, 0, 1);
+	camera.front = vec3.fromValues(0, 1, 0);
+	camera.right = vec3.fromValues(1, 0, 0);
+
+	camera.up_r = vec3.create();
+	camera.front_r = vec3.create();
+	camera.right_r = vec3.create();
+
+	camera.center = vec3.create();
+
+	camera.rotate = quat.create();
+
+	camera.position = vec3.fromValues(10, 10, 20);
 
 	camera.view = mat4.create();
-
-	camera.altitude = -Math.PI / 4;
-	camera.direction = -3 * Math.PI / 4;
-
 	camera.projection = mat4.create();
-	projection = camera.projection; // Global
-
-	camera.up = vec3.create();
-	camera.upr = vec3.create();
-	vec3.set(camera.up, 0.0, 1.0, 0.0);
-	camera.right = vec3.create();
-	camera.rightr = vec3.create();
-	vec3.set(camera.right, 1.0, 0.0, 0.0);
-	camera.front = vec3.create();
-	camera.frontr = vec3.create();
-	vec3.set(camera.front, 0.0, 0.0, 1.0);
-
-	camera.rotate = mat4.create();
-
-	camera.adjoint = mat4.create();
-
-	camera.position = vec3.create();
-	vec3.set(camera.position, -10.0, -10.0, -20.0);
-
 	camera.vp = mat4.create();
-	camera._vp = mat4.create();
 
 	camera.dirpad = [false, false, false, false];
 	camera.wasd = [false, false, false, false];
@@ -118,24 +107,34 @@ function init_camera() {
 	};
 
 	camera.update = function(dt) {
-		camera.altitude += dt * ((camera.dirpad[3] ? 1 : 0) + (camera.dirpad[1] ? -1 : 0));
-		camera.direction += dt * ((camera.dirpad[2] ? 1 : 0) + (camera.dirpad[0] ? -1 : 0));
-		mat4.identity(camera.rotate);
-		mat4.rotateX(camera.rotate, camera.rotate, camera.altitude);
-		mat4.rotateZ(camera.rotate, camera.rotate, camera.direction);
-		mat4.adjoint(camera.adjoint, camera.rotate);
-		vec3.transformMat4(camera.frontr, camera.front, camera.adjoint);
-		vec3.scale(camera.frontr, camera.frontr, dt * ((camera.wasd[1] ? 10 : 0) + (camera.wasd[3] ? -10 : 0)));
-		vec3.transformMat4(camera.upr, camera.up, camera.adjoint);
-		vec3.scale(camera.upr, camera.upr, dt * ((camera.qe[0] ? 10 : 0) + (camera.qe[1] ? -10 : 0)));
-		vec3.transformMat4(camera.rightr, camera.right, camera.adjoint);
-		vec3.scale(camera.rightr, camera.rightr, dt * ((camera.wasd[0] ? 10 : 0) + (camera.wasd[2] ? -10 : 0)));
-		vec3.add(camera.position, camera.position, camera.frontr);
-		vec3.add(camera.position, camera.position, camera.upr);
-		vec3.add(camera.position, camera.position, camera.rightr);
-		mat4.translate(camera.view, camera.rotate, camera.position);
+		var d_pitch = dt * ((camera.dirpad[1] ? 1 : 0) + (camera.dirpad[3] ? -1 : 0));
+		var d_yaw = dt * ((camera.dirpad[0] ? 1 : 0) + (camera.dirpad[2] ? -1 : 0));
+		var d_roll = dt * ((camera.qe[1] ? 10 : 0) + (camera.qe[0] ? -10 : 0)) * 0.2;
+		var d_advance = dt * ((camera.wasd[1] ? 10 : 0) + (camera.wasd[3] ? -10 : 0));
+		var d_strafe = dt * ((camera.wasd[2] ? 10 : 0) + (camera.wasd[0] ? -10 : 0));
+
+		quat.rotateX(camera.rotate, camera.rotate, d_pitch);
+		quat.rotateY(camera.rotate, camera.rotate, d_roll);
+		quat.rotateZ(camera.rotate, camera.rotate, d_yaw);
+
+		vec3.transformQuat(camera.up_r, camera.up, camera.rotate);
+		vec3.transformQuat(camera.front_r, camera.front, camera.rotate);
+		vec3.transformQuat(camera.right_r, camera.right, camera.rotate);
+
+		camera.position[0] += camera.front_r[0] * d_advance + camera.right_r[0] * d_strafe;
+		camera.position[1] += camera.front_r[1] * d_advance + camera.right_r[1] * d_strafe;
+		camera.position[2] += camera.front_r[2] * d_advance + camera.right_r[2] * d_strafe;
+
+		vec3.add(camera.center, camera.position, camera.front_r);
+		
+		mat4.lookAt(camera.view, camera.position, camera.center, camera.up_r);
 		mat4.multiply(camera.vp, camera.projection, camera.view);
 	};
+
+	camera.resize = function(ar) {
+		camera.ar = ar;
+		mat4.perspective(camera.projection, Math.PI / 3, ar, 1.0, 100.0);
+	}
 
 	return camera;
 }

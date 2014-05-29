@@ -8188,40 +8188,29 @@ Buffers.prototype.populate = function() {
 // FILE SEPARATOR
 
 /* global mat4, vec3 */
-/* exported init_camera, projection */
+/* exported init_camera */
 
 var projection;
 
 function init_camera() {
-	var camera = {};
+	camera = {};
+	camera.up = vec3.fromValues(0, 0, 1);
+	camera.front = vec3.fromValues(0, 1, 0);
+	camera.right = vec3.fromValues(1, 0, 0);
+
+	camera.up_r = vec3.create();
+	camera.front_r = vec3.create();
+	camera.right_r = vec3.create();
+
+	camera.center = vec3.create();
+
+	camera.rotate = quat.create();
+
+	camera.position = vec3.fromValues(10, 10, 20);
 
 	camera.view = mat4.create();
-
-	camera.altitude = -Math.PI / 4;
-	camera.direction = -3 * Math.PI / 4;
-
 	camera.projection = mat4.create();
-	projection = camera.projection; // Global
-
-	camera.up = vec3.create();
-	camera.upr = vec3.create();
-	vec3.set(camera.up, 0.0, 1.0, 0.0);
-	camera.right = vec3.create();
-	camera.rightr = vec3.create();
-	vec3.set(camera.right, 1.0, 0.0, 0.0);
-	camera.front = vec3.create();
-	camera.frontr = vec3.create();
-	vec3.set(camera.front, 0.0, 0.0, 1.0);
-
-	camera.rotate = mat4.create();
-
-	camera.adjoint = mat4.create();
-
-	camera.position = vec3.create();
-	vec3.set(camera.position, -10.0, -10.0, -20.0);
-
 	camera.vp = mat4.create();
-	camera._vp = mat4.create();
 
 	camera.dirpad = [false, false, false, false];
 	camera.wasd = [false, false, false, false];
@@ -8306,24 +8295,34 @@ function init_camera() {
 	};
 
 	camera.update = function(dt) {
-		camera.altitude += dt * ((camera.dirpad[3] ? 1 : 0) + (camera.dirpad[1] ? -1 : 0));
-		camera.direction += dt * ((camera.dirpad[2] ? 1 : 0) + (camera.dirpad[0] ? -1 : 0));
-		mat4.identity(camera.rotate);
-		mat4.rotateX(camera.rotate, camera.rotate, camera.altitude);
-		mat4.rotateZ(camera.rotate, camera.rotate, camera.direction);
-		mat4.adjoint(camera.adjoint, camera.rotate);
-		vec3.transformMat4(camera.frontr, camera.front, camera.adjoint);
-		vec3.scale(camera.frontr, camera.frontr, dt * ((camera.wasd[1] ? 10 : 0) + (camera.wasd[3] ? -10 : 0)));
-		vec3.transformMat4(camera.upr, camera.up, camera.adjoint);
-		vec3.scale(camera.upr, camera.upr, dt * ((camera.qe[0] ? 10 : 0) + (camera.qe[1] ? -10 : 0)));
-		vec3.transformMat4(camera.rightr, camera.right, camera.adjoint);
-		vec3.scale(camera.rightr, camera.rightr, dt * ((camera.wasd[0] ? 10 : 0) + (camera.wasd[2] ? -10 : 0)));
-		vec3.add(camera.position, camera.position, camera.frontr);
-		vec3.add(camera.position, camera.position, camera.upr);
-		vec3.add(camera.position, camera.position, camera.rightr);
-		mat4.translate(camera.view, camera.rotate, camera.position);
+		var d_pitch = dt * ((camera.dirpad[1] ? 1 : 0) + (camera.dirpad[3] ? -1 : 0));
+		var d_yaw = dt * ((camera.dirpad[0] ? 1 : 0) + (camera.dirpad[2] ? -1 : 0));
+		var d_roll = dt * ((camera.qe[1] ? 10 : 0) + (camera.qe[0] ? -10 : 0)) * 0.2;
+		var d_advance = dt * ((camera.wasd[1] ? 10 : 0) + (camera.wasd[3] ? -10 : 0));
+		var d_strafe = dt * ((camera.wasd[2] ? 10 : 0) + (camera.wasd[0] ? -10 : 0));
+
+		quat.rotateX(camera.rotate, camera.rotate, d_pitch);
+		quat.rotateY(camera.rotate, camera.rotate, d_roll);
+		quat.rotateZ(camera.rotate, camera.rotate, d_yaw);
+
+		vec3.transformQuat(camera.up_r, camera.up, camera.rotate);
+		vec3.transformQuat(camera.front_r, camera.front, camera.rotate);
+		vec3.transformQuat(camera.right_r, camera.right, camera.rotate);
+
+		camera.position[0] += camera.front_r[0] * d_advance + camera.right_r[0] * d_strafe;
+		camera.position[1] += camera.front_r[1] * d_advance + camera.right_r[1] * d_strafe;
+		camera.position[2] += camera.front_r[2] * d_advance + camera.right_r[2] * d_strafe;
+
+		vec3.add(camera.center, camera.position, camera.front_r);
+		
+		mat4.lookAt(camera.view, camera.position, camera.center, camera.up_r);
 		mat4.multiply(camera.vp, camera.projection, camera.view);
 	};
+
+	camera.resize = function(ar) {
+		camera.ar = ar;
+		mat4.perspective(camera.projection, Math.PI / 3, ar, 1.0, 100.0);
+	}
 
 	return camera;
 };
@@ -8535,6 +8534,10 @@ function sphere(offset, x, y, z) {
 
 // FILE SEPARATOR
 
+;
+
+// FILE SEPARATOR
+
 /* global this, gl */
 /* global mat4 */
 /* global ASIZE, ESIZE, VSIZE */
@@ -8603,7 +8606,7 @@ Tracer.prototype.propagate = function(pixel, hit) {
 	vec3.add(pixel, pixel, hit.mat.d);
 	vec3.add(pixel, pixel, hit.mat.a);
 	if (Math.floor(hit.o[0]) % 2 === 0) pixel[0] += 0.5;
-	if (Math.floor(hit.o[1]) % 2 === 0) pixel[1] += 0.5;
+	//if (Math.floor(hit.o[1]) % 2 === 0) pixel[1] += 0.5;
 }
 
 Tracer.prototype.trace = function(pixel, ray) {
@@ -8627,14 +8630,12 @@ Tracer.prototype.trace = function(pixel, ray) {
 }
 
 Tracer.prototype.sample = function(pixel, x, y, camera) {
-	var p = vec4.fromValues(x, y, 1.0, 1.0);
-	var u = vec4.fromValues(0.0, 0.0, -1.0, 0.0);
+	var p = vec3.fromValues(-camera.position[0], -camera.position[1], -camera.position[2]);
+	var u = vec4.fromValues(x, y, 1.0, 0.0);
 
-	vec4.transformMat4(p, p, camera._vp);
-	vec4.transformMat4(u, u, camera._vp);
 
-	p = vec3.fromValues(p[0] / p[3], p[1] / p[3], p[2] / p[3])
-	u = vec3.clone(u);
+	u = vec3.fromValues(-u[0] / u[3], -u[1] / u[3], -u[2] / u[3]);
+	vec3.sub(u, u, p);
 	vec3.normalize(u, u);
 
 	var r = new Ray(p, u);
@@ -8656,7 +8657,7 @@ Tracer.prototype.rasterize = function(camera, width, height, big_width, big_heig
 			var x = 2 * i / width - 1 + 1 / width;
 			var y = 2 * j / height - 1 + 1 / height;
 
-			if (true) {
+			if (false) {
 				this.sample(pixel, x + Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
 				this.sample(pixel, x + Math.random() * (1 / width), y - Math.random() * (1 / height), camera);
 				this.sample(pixel, x - Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
@@ -8682,10 +8683,8 @@ Tracer.prototype.rasterize = function(camera, width, height, big_width, big_heig
 };
 
 Tracer.prototype.snap = function(camera) {
-	var width = gl.drawingBufferWidth / 2 / 4;
-	var height = gl.drawingBufferHeight / 4;
-
-	mat4.invert(camera._vp, camera.vp);
+	var width = gl.drawingBufferWidth / 2 / 32;
+	var height = gl.drawingBufferHeight / 32;
 
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));
@@ -8765,7 +8764,7 @@ function resize() {
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-	mat4.perspective(projection, Math.PI / 3, gl.drawingBufferWidth / gl.drawingBufferHeight / 2, 1.0, 100.0);
+	camera.resize(gl.drawingBufferWidth / gl.drawingBufferHeight / 2);
 }
 
 Math.baseLog = function(x, y) {

@@ -67,7 +67,7 @@ Tracer.prototype.propagate = function(pixel, hit) {
 	vec3.add(pixel, pixel, hit.mat.d);
 	vec3.add(pixel, pixel, hit.mat.a);
 	if (Math.floor(hit.o[0]) % 2 === 0) pixel[0] += 0.5;
-	if (Math.floor(hit.o[1]) % 2 === 0) pixel[1] += 0.5;
+	//if (Math.floor(hit.o[1]) % 2 === 0) pixel[1] += 0.5;
 }
 
 Tracer.prototype.trace = function(pixel, ray) {
@@ -91,14 +91,12 @@ Tracer.prototype.trace = function(pixel, ray) {
 }
 
 Tracer.prototype.sample = function(pixel, x, y, camera) {
-	var p = vec4.fromValues(x, y, 1.0, 1.0);
-	var u = vec4.fromValues(0.0, 0.0, -1.0, 0.0);
+	var p = vec3.fromValues(-camera.position[0], -camera.position[1], -camera.position[2]);
+	var u = vec4.fromValues(x, y, 1.0, 0.0);
 
-	vec4.transformMat4(p, p, camera._vp);
-	vec4.transformMat4(u, u, camera._vp);
 
-	p = vec3.fromValues(p[0] / p[3], p[1] / p[3], p[2] / p[3])
-	u = vec3.clone(u);
+	u = vec3.fromValues(-u[0] / u[3], -u[1] / u[3], -u[2] / u[3]);
+	vec3.sub(u, u, p);
 	vec3.normalize(u, u);
 
 	var r = new Ray(p, u);
@@ -120,7 +118,7 @@ Tracer.prototype.rasterize = function(camera, width, height, big_width, big_heig
 			var x = 2 * i / width - 1 + 1 / width;
 			var y = 2 * j / height - 1 + 1 / height;
 
-			if (true) {
+			if (false) {
 				this.sample(pixel, x + Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
 				this.sample(pixel, x + Math.random() * (1 / width), y - Math.random() * (1 / height), camera);
 				this.sample(pixel, x - Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
@@ -146,10 +144,8 @@ Tracer.prototype.rasterize = function(camera, width, height, big_width, big_heig
 };
 
 Tracer.prototype.snap = function(camera) {
-	var width = gl.drawingBufferWidth / 2 / 4;
-	var height = gl.drawingBufferHeight / 4;
-
-	mat4.invert(camera._vp, camera.vp);
+	var width = gl.drawingBufferWidth / 2 / 32;
+	var height = gl.drawingBufferHeight / 32;
 
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));
