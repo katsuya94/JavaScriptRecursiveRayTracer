@@ -42,33 +42,42 @@ function main() {
 	var sphere = new Entity(undefined, undefined, transform, function(ray) {
 		var a = ray.u[0] * ray.u[0] + ray.u[1] * ray.u[1] + ray.u[2] * ray.u[2];
 		var b = 2 * (ray.p[0] * ray.u[0] + ray.p[1] * ray.u[1] + ray.p[2] * ray.u[2]);
-		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 1;
+		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 9;
 
 		var t_1 = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
 		var t_2 = (-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a);
 
 		var v_1 = vec3.create();
-		if (t_1) vec3.scaleAndAdd(v_1, ray.p, ray.u, t_1);
+		if (t_1 && t_1 > 0) vec3.scaleAndAdd(v_1, ray.p, ray.u, t_1);
 
 		var v_2 = vec3.create();
-		if (t_2) vec3.scaleAndAdd(v_2, ray.p, ray.u, t_2);
+		if (t_2 && t_2 > 0) vec3.scaleAndAdd(v_2, ray.p, ray.u, t_2);
 
 		var v;
 
-		if (t_1 && vec3.dot(v_1, ray.u) < 0)
-			return new Hit(ray, v_1, v_1, PEWTER);
-		else if (t_2)
-			return new Hit(ray, v_2, v_2, PEWTER);
-		else
+		if (t_1 && t_1 > 0 && vec3.dot(v_1, ray.u) < 0) {
+			var n = vec3.fromValues(v_1[0] / 3, v_1[1] / 3, v_1[2] / 3)
+			return new Hit(ray, v_1, n, PEWTER);
+		} else if (t_2 && t_2 > 0) {
+			var n = vec3.fromValues(v_2[0] / 3, v_2[1] / 3, v_2[2] / 3)
+			return new Hit(ray, v_2, n, PEWTER);
+		} else {
 			return null;
+		}
 	});
 	tracer.register(sphere);
 
 	tracer.light(new Light(
-		vec3.fromValues(0.0, 0.0, 10.0),
-		vec3.fromValues(1.0, 1.0, 1.0),
-		vec3.fromValues(1.0, 1.0, 1.0),
-		vec3.fromValues(1.0, 1.0, 1.0)));
+		vec3.fromValues(10.0, 10.0, 10.0),
+		vec3.fromValues(0.5, 0.5, 0.5),
+		vec3.fromValues(0.5, 0.5, 0.5),
+		vec3.fromValues(0.5, 0.5, 0.5)));
+
+	// tracer.light(new Light(
+	// 	vec3.fromValues(10.0, 10.0, 10.0),
+	// 	vec3.fromValues(0.0, 0.0, 0.0),
+	// 	vec3.fromValues(0.75, 0.75, 0.75),
+	// 	vec3.fromValues(0.75, 0.75, 0.75)));
 
 	var axes = new Entity([
 		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,

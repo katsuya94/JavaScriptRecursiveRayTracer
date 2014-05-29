@@ -20,7 +20,7 @@ function init_camera() {
 	quat.rotateZ(camera.rotate, camera.rotate, 3 * Math.PI / 4);
 	quat.rotateX(camera.rotate, camera.rotate, -Math.PI / 4);
 
-	camera.position = vec3.fromValues(10, 10, 20);
+	camera.position = vec3.fromValues(10, 10, 10);
 
 	camera.view = mat4.create();
 	camera.projection = mat4.create();
