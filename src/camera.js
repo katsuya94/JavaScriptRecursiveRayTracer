@@ -17,6 +17,8 @@ function init_camera() {
 	camera.center = vec3.create();
 
 	camera.rotate = quat.create();
+	quat.rotateZ(camera.rotate, camera.rotate, 3 * Math.PI / 4);
+	quat.rotateX(camera.rotate, camera.rotate, -Math.PI / 4);
 
 	camera.position = vec3.fromValues(10, 10, 20);
 
