@@ -147,7 +147,7 @@ function init_camera() {
 
 	camera.resize = function(ar) {
 		camera.ar = ar;
-		mat4.perspective(camera.projection, Math.PI / 3, ar, 1.0, 100.0);
+		mat4.perspective(camera.projection, FOV, ar, 1.0, 100.0);
 	}
 
 	return camera;

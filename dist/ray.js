@@ -8335,7 +8335,7 @@ function init_camera() {
 
 	camera.resize = function(ar) {
 		camera.ar = ar;
-		mat4.perspective(camera.projection, Math.PI / 3, ar, 1.0, 100.0);
+		mat4.perspective(camera.projection, FOV, ar, 1.0, 100.0);
 	}
 
 	return camera;
@@ -8347,7 +8347,10 @@ function init_camera() {
 
 var ASIZE = (new Float32Array()).BYTES_PER_ELEMENT;
 var ESIZE = (new Uint16Array()).BYTES_PER_ELEMENT;
-var VSIZE = 6;;
+var VSIZE = 6;
+
+var FOV = Math.PI / 3;
+var T_2 = Math.tan(FOV / 2);;
 
 // FILE SEPARATOR
 
@@ -8404,7 +8407,7 @@ function main() {
 	gl.enable(gl.DEPTH_TEST);
 
 	// Set up Camera
-	var camera = init_camera();
+	camera = init_camera();
 
 	// Geometry
 	var floor = new Entity(grid(), undefined, mat4.create(), function plane(ray) {
@@ -8468,7 +8471,7 @@ function main() {
 
 		if (flag) {
 			flag = false;
-			tracer.snap(camera);
+			tracer.snap();
 		}
 
 		gl.useProgram(program_image);
@@ -8620,7 +8623,7 @@ Tracer.prototype.propagate = function(pixel, hit) {
 	vec3.add(pixel, pixel, hit.mat.d);
 	vec3.add(pixel, pixel, hit.mat.a);
 	if (Math.floor(hit.o[0]) % 2 === 0) pixel[0] += 0.5;
-	//if (Math.floor(hit.o[1]) % 2 === 0) pixel[1] += 0.5;
+	if (Math.floor(hit.o[1]) % 2 === 0) pixel[1] += 0.5;
 }
 
 Tracer.prototype.trace = function(pixel, ray) {
@@ -8643,21 +8646,24 @@ Tracer.prototype.trace = function(pixel, ray) {
 	}
 }
 
-Tracer.prototype.sample = function(pixel, x, y, camera) {
-	var p = vec3.fromValues(-camera.position[0], -camera.position[1], -camera.position[2]);
-	var u = vec4.fromValues(x, y, 1.0, 0.0);
+Tracer.prototype.sample = function(pixel, x, y) {
+	var p = camera.position;
+	var u = vec3.clone(camera.front_r);
 
+	var i = vec3.create();
+	vec3.scale(i, camera.right_r, x);
+	var j = vec3.create();
+	vec3.scale(j, camera.up_r, y);
 
-	u = vec3.fromValues(-u[0] / u[3], -u[1] / u[3], -u[2] / u[3]);
-	vec3.sub(u, u, p);
-	vec3.normalize(u, u);
+	vec3.add(u, u, i);
+	vec3.add(u, u, j);
 
 	var r = new Ray(p, u);
 
 	this.trace(pixel, r);
 }
 
-Tracer.prototype.rasterize = function(camera, width, height, big_width, big_height) {
+Tracer.prototype.rasterize = function(width, height, big_width, big_height) {
 	var pixel = vec3.create();
 	var image = new Uint8Array(big_width * big_height * 3);
 	for (var j = 0; j < height; j++) {
@@ -8696,14 +8702,14 @@ Tracer.prototype.rasterize = function(camera, width, height, big_width, big_heig
 	return image;
 };
 
-Tracer.prototype.snap = function(camera) {
-	var width = gl.drawingBufferWidth / 2 / 32;
-	var height = gl.drawingBufferHeight / 32;
+Tracer.prototype.snap = function() {
+	var width = gl.drawingBufferWidth / 2;
+	var height = gl.drawingBufferHeight;
 
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));
 
-	var image = this.rasterize(camera, width, height, big_width, big_height);
+	var image = this.rasterize(width, height, big_width, big_height);
 
 	var tex_image = gl.createTexture();
 	gl.activeTexture(gl.TEXTURE0);

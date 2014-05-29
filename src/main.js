@@ -23,7 +23,7 @@ function main() {
 	gl.enable(gl.DEPTH_TEST);
 
 	// Set up Camera
-	var camera = init_camera();
+	camera = init_camera();
 
 	// Geometry
 	var floor = new Entity(grid(), undefined, mat4.create(), function plane(ray) {
@@ -87,7 +87,7 @@ function main() {
 
 		if (flag) {
 			flag = false;
-			tracer.snap(camera);
+			tracer.snap();
 		}
 
 		gl.useProgram(program_image);
