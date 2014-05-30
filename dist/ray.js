@@ -8188,44 +8188,36 @@ Buffers.prototype.populate = function() {
 // FILE SEPARATOR
 
 /* global mat4, vec3 */
-/* exported init_camera, projection */
+/* exported init_camera */
 
 var projection;
 
 function init_camera() {
-	var camera = {};
+	camera = {};
+	camera.up = vec3.fromValues(0, 0, 1);
+	camera.front = vec3.fromValues(0, 1, 0);
+	camera.right = vec3.fromValues(1, 0, 0);
+
+	camera.up_r = vec3.create();
+	camera.front_r = vec3.create();
+	camera.right_r = vec3.create();
+
+	camera.center = vec3.create();
+
+	camera.rotate = quat.create();
+	quat.rotateZ(camera.rotate, camera.rotate, 3 * Math.PI / 4);
+	quat.rotateX(camera.rotate, camera.rotate, -Math.PI / 4);
+
+	camera.position = vec3.fromValues(10, 10, 10);
 
 	camera.view = mat4.create();
-
-	camera.altitude = -Math.PI / 4;
-	camera.direction = -3 * Math.PI / 4;
-
 	camera.projection = mat4.create();
-	projection = camera.projection; // Global
-
-	camera.up = vec3.create();
-	camera.upr = vec3.create();
-	vec3.set(camera.up, 0.0, 1.0, 0.0);
-	camera.right = vec3.create();
-	camera.rightr = vec3.create();
-	vec3.set(camera.right, 1.0, 0.0, 0.0);
-	camera.front = vec3.create();
-	camera.frontr = vec3.create();
-	vec3.set(camera.front, 0.0, 0.0, 1.0);
-
-	camera.rotate = mat4.create();
-
-	camera.adjoint = mat4.create();
-
-	camera.position = vec3.create();
-	vec3.set(camera.position, -10.0, -10.0, -20.0);
-
 	camera.vp = mat4.create();
-	camera._vp = mat4.create();
 
 	camera.dirpad = [false, false, false, false];
 	camera.wasd = [false, false, false, false];
 	camera.qe = [false, false];
+	camera.zx = [false, false];
 
 	window.onkeydown = function(e) {
 		var key = e.keyCode ? e.keyCode : e.which;
@@ -8259,6 +8251,12 @@ function init_camera() {
 			break;
 		case 69:
 			camera.qe[1] = true;
+			break;
+		case 90:
+			camera.zx[0] = true;
+			break;
+		case 88:
+			camera.zx[1] = true;
 			break;
 		case 112:
 			document.getElementById('help').style.display = 'block';
@@ -8299,6 +8297,12 @@ function init_camera() {
 		case 69:
 			camera.qe[1] = false;
 			break;
+		case 90:
+			camera.zx[0] = false;
+			break;
+		case 88:
+			camera.zx[1] = false;
+			break;
 		case 112:
 			document.getElementById('help').style.display = 'none';
 			break;
@@ -8306,24 +8310,35 @@ function init_camera() {
 	};
 
 	camera.update = function(dt) {
-		camera.altitude += dt * ((camera.dirpad[3] ? 1 : 0) + (camera.dirpad[1] ? -1 : 0));
-		camera.direction += dt * ((camera.dirpad[2] ? 1 : 0) + (camera.dirpad[0] ? -1 : 0));
-		mat4.identity(camera.rotate);
-		mat4.rotateX(camera.rotate, camera.rotate, camera.altitude);
-		mat4.rotateZ(camera.rotate, camera.rotate, camera.direction);
-		mat4.adjoint(camera.adjoint, camera.rotate);
-		vec3.transformMat4(camera.frontr, camera.front, camera.adjoint);
-		vec3.scale(camera.frontr, camera.frontr, dt * ((camera.wasd[1] ? 10 : 0) + (camera.wasd[3] ? -10 : 0)));
-		vec3.transformMat4(camera.upr, camera.up, camera.adjoint);
-		vec3.scale(camera.upr, camera.upr, dt * ((camera.qe[0] ? 10 : 0) + (camera.qe[1] ? -10 : 0)));
-		vec3.transformMat4(camera.rightr, camera.right, camera.adjoint);
-		vec3.scale(camera.rightr, camera.rightr, dt * ((camera.wasd[0] ? 10 : 0) + (camera.wasd[2] ? -10 : 0)));
-		vec3.add(camera.position, camera.position, camera.frontr);
-		vec3.add(camera.position, camera.position, camera.upr);
-		vec3.add(camera.position, camera.position, camera.rightr);
-		mat4.translate(camera.view, camera.rotate, camera.position);
+		var d_pitch = dt * ((camera.dirpad[1] ? 1 : 0) + (camera.dirpad[3] ? -1 : 0));
+		var d_yaw = dt * ((camera.dirpad[0] ? 1 : 0) + (camera.dirpad[2] ? -1 : 0));
+		var d_roll = dt * ((camera.qe[1] ? 1 : 0) + (camera.qe[0] ? -1 : 0));
+		var d_advance = dt * ((camera.wasd[1] ? 10 : 0) + (camera.wasd[3] ? -10 : 0));
+		var d_strafe = dt * ((camera.wasd[2] ? 10 : 0) + (camera.wasd[0] ? -10 : 0));
+		var d_ascend = dt * ((camera.zx[1] ? 10 : 0) + (camera.zx[0] ? -10 : 0));
+
+		quat.rotateX(camera.rotate, camera.rotate, d_pitch);
+		quat.rotateY(camera.rotate, camera.rotate, d_roll);
+		quat.rotateZ(camera.rotate, camera.rotate, d_yaw);
+
+		vec3.transformQuat(camera.up_r, camera.up, camera.rotate);
+		vec3.transformQuat(camera.front_r, camera.front, camera.rotate);
+		vec3.transformQuat(camera.right_r, camera.right, camera.rotate);
+
+		camera.position[0] += camera.front_r[0] * d_advance + camera.right_r[0] * d_strafe + camera.up_r[0] * d_ascend;
+		camera.position[1] += camera.front_r[1] * d_advance + camera.right_r[1] * d_strafe + camera.up_r[1] * d_ascend;
+		camera.position[2] += camera.front_r[2] * d_advance + camera.right_r[2] * d_strafe + camera.up_r[2] * d_ascend;
+
+		vec3.add(camera.center, camera.position, camera.front_r);
+		
+		mat4.lookAt(camera.view, camera.position, camera.center, camera.up_r);
 		mat4.multiply(camera.vp, camera.projection, camera.view);
 	};
+
+	camera.resize = function(ar) {
+		camera.ar = ar;
+		mat4.perspective(camera.projection, FOV, ar, 1.0, 100.0);
+	}
 
 	return camera;
 };
@@ -8334,7 +8349,10 @@ function init_camera() {
 
 var ASIZE = (new Float32Array()).BYTES_PER_ELEMENT;
 var ESIZE = (new Uint16Array()).BYTES_PER_ELEMENT;
-var VSIZE = 6;;
+var VSIZE = 6;
+
+var FOV = Math.PI / 3;
+var T_2 = Math.tan(FOV / 2);;
 
 // FILE SEPARATOR
 
@@ -8344,6 +8362,13 @@ function Entity(vertices, indices, model, hit) {
 	this.vertices = vertices;
 	this.indices = indices;
 	this.model = model;
+
+	this.inverse_model = mat4.create();
+	mat4.invert(this.inverse_model, this.model);
+
+	this.inverse_transpose_model = mat4.create();
+	mat4.transpose(this.inverse_transpose_model, this.inverse_model);
+
 	this.hit = hit;
 };
 
@@ -8391,18 +8416,72 @@ function main() {
 	gl.enable(gl.DEPTH_TEST);
 
 	// Set up Camera
-	var camera = init_camera();
+	camera = init_camera();
 
 	// Geometry
-	var floor = new Entity(grid(), undefined, mat4.create(), function plane(ray) {
-		var t = vec4.dot(ray.p, Z) / vec4.dot(ray.u, _Z);
+	var floor = new Entity(grid(), undefined, mat4.create(), function(ray) {
+		var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
 		if (t < 0) return null;
-		var origin = vec4.create();
-		vec4.scaleAndAdd(origin, ray.p, ray.u, t);
-		return new Hit(ray, origin, vec4.clone(Z), vec4.clone(ray.u), PEWTER);
+		var origin = vec3.create();
+		vec3.scaleAndAdd(origin, ray.p, ray.u, t);
+		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
+		return new Hit(ray, origin, Z, m);
 	});
 	buffers.arrayDraw(floor, 'LINES');
 	tracer.register(floor);
+
+	var transform = mat4.create();
+	mat4.scale(transform, transform, [3, 6, 3]);
+	mat4.translate(transform, transform, [1, 0, 2]);
+	var sphere = new Entity(undefined, undefined, transform, function(ray) {
+		var a = ray.u[0] * ray.u[0] + ray.u[1] * ray.u[1] + ray.u[2] * ray.u[2];
+		var b = 2 * (ray.p[0] * ray.u[0] + ray.p[1] * ray.u[1] + ray.p[2] * ray.u[2]);
+		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 1;
+
+		var t_1 = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
+		var t_2 = (-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a);
+
+		var v_1 = vec3.create();
+		if (t_1 && t_1 > 0) vec3.scaleAndAdd(v_1, ray.p, ray.u, t_1);
+
+		var v_2 = vec3.create();
+		if (t_2 && t_2 > 0) vec3.scaleAndAdd(v_2, ray.p, ray.u, t_2);
+
+		var v;
+
+		if (t_1 && t_1 > 0 && vec3.dot(v_1, ray.u) < 0) {
+			v = v_1;
+		} else if (t_2 && t_2 > 0) {
+			v = v_2;
+		}
+
+		if (v) {
+			m = (Math.floor(v[1] / 0.2) % 2) == 0 ? PEWTER : _PEWTER;
+			var n = vec3.clone(v);
+			return new Hit(ray, v, n, m);
+		} else {
+			return null;
+		}
+	});
+	tracer.register(sphere);
+
+	tracer.light(new Light(
+		vec3.fromValues(20.0, 0.0, 20.0),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25)));
+
+	tracer.light(new Light(
+		vec3.fromValues(-20.0, 0.0, 20.0),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25)));
+
+	// tracer.light(new Light(
+	// 	vec3.fromValues(10.0, 10.0, 10.0),
+	// 	vec3.fromValues(0.0, 0.0, 0.0),
+	// 	vec3.fromValues(0.75, 0.75, 0.75),
+	// 	vec3.fromValues(0.75, 0.75, 0.75)));
 
 	var axes = new Entity([
 		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
@@ -8425,11 +8504,15 @@ function main() {
 
 	// dat.GUI
 	var panel = {
+		AntiAliasing: false,
+		Detail: 0,
 		Snap: function() {
 			flag = true;
 		}
 	};
 	var gui = new dat.GUI();
+	gui.add(panel, 'AntiAliasing');
+	gui.add(panel, 'Detail', -8, 0).step(1);
 	gui.add(panel, 'Snap');
 
 	gl.useProgram(program_static);
@@ -8455,7 +8538,7 @@ function main() {
 
 		if (flag) {
 			flag = false;
-			tracer.snap(camera);
+			tracer.snap(panel.AntiAliasing, panel.Detail);
 		}
 
 		gl.useProgram(program_image);
@@ -8540,12 +8623,19 @@ function sphere(offset, x, y, z) {
 /* global ASIZE, ESIZE, VSIZE */
 /* exported init_buffers */
 
-var X = vec4.fromValues(1.0, 0.0, 0.0, 0.0);
-var _X = vec4.fromValues(-1.0, 0.0, 0.0, 0.0);
-var Y = vec4.fromValues(0.0, 1.0, 0.0, 0.0);
-var _Y = vec4.fromValues(0.0, -1.0, 0.0, 0.0);
-var Z = vec4.fromValues(0.0, 0.0, 1.0, 0.0);
-var _Z = vec4.fromValues(0.0, 0.0, -1.0, 0.0);
+var X = vec3.fromValues(1.0, 0.0, 0.0);
+var _X = vec3.fromValues(-1.0, 0.0, 0.0);
+var Y = vec3.fromValues(0.0, 1.0, 0.0);
+var _Y = vec3.fromValues(0.0, -1.0, 0.0);
+var Z = vec3.fromValues(0.0, 0.0, 1.0);
+var _Z = vec3.fromValues(0.0, 0.0, -1.0);
+
+function Light(position, ambient, diffuse, specular) {
+	this.o = position;
+	this.a = ambient;
+	this.d = diffuse;
+	this.s = specular;
+}
 
 function Material(emissive, ambient, diffuse, specular, alpha) {
 	this.e = emissive;
@@ -8562,14 +8652,40 @@ var PEWTER = new Material(
 	vec3.fromValues(0.427451, 0.470588, 0.541176),
 	9.84615);
 
-function Hit(ray, origin, normal, incident, material) {
-	var x = origin[0] - ray.p[0];
-	var y = origin[1] - ray.p[1];
-	var z = origin[2] - ray.p[2];
-	this.distance = Math.sqrt(x * x + y * y + z * z);
+var _PEWTER = new Material(
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.113725, 0.058824, 0.105882),
+	vec3.fromValues(0.521569, 0.333333, 0.333333),
+	vec3.fromValues(0.541176, 0.470588, 0.427451),
+	9.84615);
+
+var BLACK_PLASTIC = new Material(
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.01, 0.01, 0.01),
+	vec3.fromValues(0.5, 0.5, 0.5),
+	4.0);
+
+var WHITE_PLASTIC = new Material(
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.55, 0.55, 0.55),
+	vec3.fromValues(0.7, 0.7, 0.7),
+	4.0);
+
+var SILVER = new Material(
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.19225, 0.19225, 0.19225),
+	vec3.fromValues(0.50754, 0.50754, 0.50754),
+	vec3.fromValues(0.508273, 0.508273, 0.508273),
+	0.4);
+
+function Hit(ray, origin, normal, material) {
+	this.d = vec3.create();
+	vec3.sub(this.d, ray.p, origin);
 	this.o = origin;
 	this.n = normal;
-	this.i = incident;
+	this.i = vec3.clone(ray.u);
 	this.mat = material;
 }
 
@@ -8591,28 +8707,94 @@ function Tracer(program) {
 	gl.enableVertexAttribArray(this.a_rectangle);
 
 	this.entities = [];
+	this.lights = [];
 }
 
 Tracer.prototype.register = function(entity) {
-	this.entities.push(entity.hit);
+	this.entities.push(entity);
 }
 
-var propagate_temp = vec3.create();
-
-Tracer.prototype.propagate = function(pixel, hit) {
-	vec3.add(pixel, pixel, hit.mat.d);
-	vec3.add(pixel, pixel, hit.mat.a);
-	if (Math.floor(hit.o[0] / hit.o[3]) % 2 === 0) pixel[0] += 0.5;
-	if (Math.floor(hit.o[1] / hit.o[3]) % 2 === 0) pixel[1] += 0.5;
+Tracer.prototype.light = function(light) {
+	this.lights.push(light);
 }
 
-Tracer.prototype.trace = function(pixel, ray) {
-	var close = null;
-	for (var i = 0; i < this.entities.length; i++) {
-		var h = this.entities[i](ray);
+Tracer.prototype.propagate = function(pixel, hit, level) {
+	var shadow = vec3.create();
+	var reflection = vec3.create();
+
+	var ambient = vec3.create();
+	var diffuse = vec3.create();
+	var specular = vec3.create();
+
+	vec3.copy(reflection, hit.i);
+	vec3.scaleAndAdd(reflection, reflection, hit.n, -2 * vec3.dot(hit.n, hit.i));
+
+	var h = null;
+
+	if (level > 0) {
+		h = this.trace(new Ray(vec3.clone(hit.o), vec3.clone(reflection)), hit.id);
+
 		if (h) {
+			this.propagate(specular, h, level - 1);
+		}
+	}
+
+	for (var i = 0; i < this.lights.length; i++) {
+		var l = this.lights[i];
+
+		vec3.add(ambient, ambient, l.a);
+
+		vec3.sub(shadow, l.o, hit.o);
+		vec3.normalize(shadow, shadow);
+
+		if (!this.trace(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), hit.id)) {
+			vec3.scaleAndAdd(diffuse, diffuse, l.d, Math.max(0, vec3.dot(hit.n, shadow)));
+		}
+
+		vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
+	}
+
+	vec3.mul(ambient, hit.mat.a, ambient);
+	vec3.mul(diffuse, hit.mat.d, diffuse);
+	vec3.mul(specular, hit.mat.s, specular);
+
+	vec3.add(pixel, pixel, ambient);
+	vec3.add(pixel, pixel, diffuse);
+	vec3.add(pixel, pixel, specular);
+}
+
+Tracer.prototype.trace = function(ray, exclude) {
+	var close = null;
+
+	for (var i = 0; i < this.entities.length; i++) {
+		if (i === exclude)
+			continue;
+
+		var e = this.entities[i];
+		
+		var model_ray = new Ray(vec4.fromValues(ray.p[0], ray.p[1], ray.p[2], 1), vec4.fromValues(ray.u[0], ray.u[1], ray.u[2], 0));
+		vec4.transformMat4(model_ray.p, model_ray.p, e.inverse_model);
+		vec4.transformMat4(model_ray.u, model_ray.u, e.inverse_model);
+
+		var h = this.entities[i].hit(model_ray);
+
+		if (h) {
+			h.o = vec4.fromValues(h.o[0], h.o[1], h.o[2], 1);
+			vec4.transformMat4(h.o, h.o, e.model);
+
+			h.n = vec4.fromValues(h.n[0], h.n[1], h.n[2], 0);
+			vec4.transformMat4(h.n, h.n, e.model);
+
+			h.i = vec4.fromValues(h.i[0], h.i[1], h.i[2], 0);
+			vec4.transformMat4(h.i, h.i, e.inverse_transpose_model);
+
+			h.d = vec4.fromValues(h.d[0], h.d[1], h.d[2], 0);
+			vec4.transformMat4(h.d, h.d, e.model);
+
+			h.id = i;
+
 			if (close) {
-				if (h.distance < close.distance) {
+				if (vec3.len(h.d) < vec3.len(close.d)) {
 					close = h;
 				}
 			} else {
@@ -8621,26 +8803,32 @@ Tracer.prototype.trace = function(pixel, ray) {
 		}
 	}
 
-	if (close) {
-		this.propagate(pixel, close);
-	}
-}
+	return close;
+};
 
-Tracer.prototype.sample = function(pixel, x, y, camera) {
-	var p = vec4.fromValues(x, y, 1.0, 1.0);
-	var u = vec4.fromValues(0.0, 0.0, -1.0, 0.0);
+Tracer.prototype.calculate = function(pixel, ray) {
+	var h = this.trace(ray);
+	if (h) this.propagate(pixel, h, 2);
+};
 
-	vec4.transformMat4(p, p, camera._vp);
-	vec4.transformMat4(u, u, camera._vp);
+Tracer.prototype.sample = function(pixel, x, y) {
+	var p = camera.position;
+	var u = vec3.clone(camera.front_r);
 
-	vec4.normalize(u, u);
+	var i = vec3.create();
+	vec3.scale(i, camera.right_r, x * T_2 * camera.ar);
+	var j = vec3.create();
+	vec3.scale(j, camera.up_r, y * T_2);
+
+	vec3.add(u, u, i);
+	vec3.add(u, u, j);
 
 	var r = new Ray(p, u);
 
-	this.trace(pixel, r);
+	this.calculate(pixel, r);
 }
 
-Tracer.prototype.rasterize = function(camera, width, height, big_width, big_height) {
+Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) {
 	var pixel = vec3.create();
 	var image = new Uint8Array(big_width * big_height * 3);
 	for (var j = 0; j < height; j++) {
@@ -8654,7 +8842,7 @@ Tracer.prototype.rasterize = function(camera, width, height, big_width, big_heig
 			var x = 2 * i / width - 1 + 1 / width;
 			var y = 2 * j / height - 1 + 1 / height;
 
-			if (true) {
+			if (aa) {
 				this.sample(pixel, x + Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
 				this.sample(pixel, x + Math.random() * (1 / width), y - Math.random() * (1 / height), camera);
 				this.sample(pixel, x - Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
@@ -8679,16 +8867,14 @@ Tracer.prototype.rasterize = function(camera, width, height, big_width, big_heig
 	return image;
 };
 
-Tracer.prototype.snap = function(camera) {
-	var width = gl.drawingBufferWidth / 2 / 4;
-	var height = gl.drawingBufferHeight / 4;
-
-	mat4.invert(camera._vp, camera.vp);
+Tracer.prototype.snap = function(aa, detail) {
+	var width = gl.drawingBufferWidth * Math.pow(2, detail) / 2;
+	var height = gl.drawingBufferHeight * Math.pow(2, detail);
 
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));
 
-	var image = this.rasterize(camera, width, height, big_width, big_height);
+	var image = this.rasterize(width, height, big_width, big_height, aa);
 
 	var tex_image = gl.createTexture();
 	gl.activeTexture(gl.TEXTURE0);
@@ -8763,7 +8949,7 @@ function resize() {
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 	gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-	mat4.perspective(projection, Math.PI / 3, gl.drawingBufferWidth / gl.drawingBufferHeight / 2, 1.0, 100.0);
+	camera.resize(gl.drawingBufferWidth / gl.drawingBufferHeight / 2);
 }
 
 Math.baseLog = function(x, y) {
