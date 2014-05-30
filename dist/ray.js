@@ -8369,12 +8369,6 @@ function Entity(vertices, indices, model, hit) {
 	this.inverse_transpose_model = mat4.create();
 	mat4.transpose(this.inverse_transpose_model, this.inverse_model);
 
-	this.transpose_model = mat4.create();
-	mat4.transpose(this.transpose_model, this.model);
-
-	this.transpose_inverse_model = mat4.create();
-	mat4.invert(this.transpose_inverse_model, this.transpose_model);
-
 	this.hit = hit;
 };
 
@@ -8430,18 +8424,19 @@ function main() {
 		if (t < 0) return null;
 		var origin = vec3.create();
 		vec3.scaleAndAdd(origin, ray.p, ray.u, t);
-		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? RED_PLASTIC : BLUE_PLASTIC;
+		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
 		return new Hit(ray, origin, Z, m);
 	});
 	buffers.arrayDraw(floor, 'LINES');
 	tracer.register(floor);
 
 	var transform = mat4.create();
-	mat4.translate(transform, transform, [0, 0, 5]);
+	mat4.scale(transform, transform, [3, 6, 3]);
+	mat4.translate(transform, transform, [1, 0, 2]);
 	var sphere = new Entity(undefined, undefined, transform, function(ray) {
 		var a = ray.u[0] * ray.u[0] + ray.u[1] * ray.u[1] + ray.u[2] * ray.u[2];
 		var b = 2 * (ray.p[0] * ray.u[0] + ray.p[1] * ray.u[1] + ray.p[2] * ray.u[2]);
-		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 9;
+		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 1;
 
 		var t_1 = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
 		var t_2 = (-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a);
@@ -8455,11 +8450,15 @@ function main() {
 		var v;
 
 		if (t_1 && t_1 > 0 && vec3.dot(v_1, ray.u) < 0) {
-			var n = vec3.fromValues(v_1[0] / 3, v_1[1] / 3, v_1[2] / 3)
-			return new Hit(ray, v_1, n, PEWTER);
+			v = v_1;
 		} else if (t_2 && t_2 > 0) {
-			var n = vec3.fromValues(v_2[0] / 3, v_2[1] / 3, v_2[2] / 3)
-			return new Hit(ray, v_2, n, PEWTER);
+			v = v_2;
+		}
+
+		if (v) {
+			m = (Math.floor(v[1] / 0.2) % 2) == 0 ? PEWTER : _PEWTER;
+			var n = vec3.clone(v);
+			return new Hit(ray, v, n, m);
 		} else {
 			return null;
 		}
@@ -8467,10 +8466,16 @@ function main() {
 	tracer.register(sphere);
 
 	tracer.light(new Light(
-		vec3.fromValues(10.0, 10.0, 10.0),
-		vec3.fromValues(0.5, 0.5, 0.5),
-		vec3.fromValues(0.5, 0.5, 0.5),
-		vec3.fromValues(0.5, 0.5, 0.5)));
+		vec3.fromValues(20.0, 0.0, 20.0),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25)));
+
+	tracer.light(new Light(
+		vec3.fromValues(-20.0, 0.0, 20.0),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25)));
 
 	// tracer.light(new Light(
 	// 	vec3.fromValues(10.0, 10.0, 10.0),
@@ -8500,12 +8505,14 @@ function main() {
 	// dat.GUI
 	var panel = {
 		AntiAliasing: false,
+		Detail: 0,
 		Snap: function() {
 			flag = true;
 		}
 	};
 	var gui = new dat.GUI();
 	gui.add(panel, 'AntiAliasing');
+	gui.add(panel, 'Detail', -8, 0).step(1);
 	gui.add(panel, 'Snap');
 
 	gl.useProgram(program_static);
@@ -8531,7 +8538,7 @@ function main() {
 
 		if (flag) {
 			flag = false;
-			tracer.snap(panel.AntiAliasing);
+			tracer.snap(panel.AntiAliasing, panel.Detail);
 		}
 
 		gl.useProgram(program_image);
@@ -8645,19 +8652,26 @@ var PEWTER = new Material(
 	vec3.fromValues(0.427451, 0.470588, 0.541176),
 	9.84615);
 
-var RED_PLASTIC = new Material(
+var _PEWTER = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.2, 0.1, 0.1),
-	vec3.fromValues(0.6, 0.0, 0.0),
-	vec3.fromValues(0.6, 0.6, 0.6),
-	100.0);
+	vec3.fromValues(0.113725, 0.058824, 0.105882),
+	vec3.fromValues(0.521569, 0.333333, 0.333333),
+	vec3.fromValues(0.541176, 0.470588, 0.427451),
+	9.84615);
 
-var BLUE_PLASTIC = new Material(
+var BLACK_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.1, 0.1, 0.2),
-	vec3.fromValues(0.0, 0.0, 0.6),
-	vec3.fromValues(0.6, 0.6, 0.6),
-	100.0);
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.01, 0.01, 0.01),
+	vec3.fromValues(0.5, 0.5, 0.5),
+	4.0);
+
+var WHITE_PLASTIC = new Material(
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.55, 0.55, 0.55),
+	vec3.fromValues(0.7, 0.7, 0.7),
+	4.0);
 
 var SILVER = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
@@ -8737,9 +8751,7 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 			vec3.scaleAndAdd(diffuse, diffuse, l.d, Math.max(0, vec3.dot(hit.n, shadow)));
 		}
 
-		if (!h) {
-			vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
-		}
+		vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
 	}
 
 	vec3.mul(ambient, hit.mat.a, ambient);
@@ -8753,30 +8765,34 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 
 Tracer.prototype.trace = function(ray, exclude) {
 	var close = null;
+
 	for (var i = 0; i < this.entities.length; i++) {
 		if (i === exclude)
 			continue;
 
 		var e = this.entities[i];
-		// var model_ray = new Ray(vec4.fromValues(ray.p[0], ray.p[1], ray.p[2], 1), vec3.fromValues(ray.u[0], ray.u[1], ray.u[2], 0));
-		// vec4.transformMat4(model_ray.p, model_ray.p, e.inverse_model);
-		// vec4.transformMat4(model_ray.u, model_ray.u, e.transpose_model);
+		
+		var model_ray = new Ray(vec4.fromValues(ray.p[0], ray.p[1], ray.p[2], 1), vec4.fromValues(ray.u[0], ray.u[1], ray.u[2], 0));
+		vec4.transformMat4(model_ray.p, model_ray.p, e.inverse_model);
+		vec4.transformMat4(model_ray.u, model_ray.u, e.inverse_model);
 
-
-		var h = this.entities[i].hit(ray);
+		var h = this.entities[i].hit(model_ray);
 
 		if (h) {
-			// h.o = vec4.fromValues(h.o[0], h.o[1], h.o[2], 1);
-			// h.n = vec4.fromValues(h.n[0], h.n[1], h.n[2], 0);
-			// h.i = vec4.fromValues(h.i[0], h.i[1], h.i[2], 0);
-			// h.d = vec4.fromValues(h.d[0], h.d[1], h.d[2], 0);
+			h.o = vec4.fromValues(h.o[0], h.o[1], h.o[2], 1);
+			vec4.transformMat4(h.o, h.o, e.model);
+
+			h.n = vec4.fromValues(h.n[0], h.n[1], h.n[2], 0);
+			vec4.transformMat4(h.n, h.n, e.model);
+
+			h.i = vec4.fromValues(h.i[0], h.i[1], h.i[2], 0);
+			vec4.transformMat4(h.i, h.i, e.inverse_transpose_model);
+
+			h.d = vec4.fromValues(h.d[0], h.d[1], h.d[2], 0);
+			vec4.transformMat4(h.d, h.d, e.model);
 
 			h.id = i;
 
-			// vec4.transformMat4(h.o, h.o, e.model);
-			// vec4.transformMat4(h.n, h.n, e.transpose_inverse_model);
-			// vec4.transformMat4(h.i, h.i, e.transpose_inverse_model);
-			// vec4.transformMat4(h.d, h.d, e.transpose_inverse_model);
 			if (close) {
 				if (vec3.len(h.d) < vec3.len(close.d)) {
 					close = h;
@@ -8851,9 +8867,9 @@ Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) 
 	return image;
 };
 
-Tracer.prototype.snap = function(aa) {
-	var width = gl.drawingBufferWidth / 2;
-	var height = gl.drawingBufferHeight;
+Tracer.prototype.snap = function(aa, detail) {
+	var width = gl.drawingBufferWidth * Math.pow(2, detail) / 2;
+	var height = gl.drawingBufferHeight * Math.pow(2, detail);
 
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));

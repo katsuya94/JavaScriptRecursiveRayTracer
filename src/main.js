@@ -31,18 +31,19 @@ function main() {
 		if (t < 0) return null;
 		var origin = vec3.create();
 		vec3.scaleAndAdd(origin, ray.p, ray.u, t);
-		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? RED_PLASTIC : BLUE_PLASTIC;
+		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
 		return new Hit(ray, origin, Z, m);
 	});
 	buffers.arrayDraw(floor, 'LINES');
 	tracer.register(floor);
 
 	var transform = mat4.create();
-	mat4.translate(transform, transform, [0, 0, 5]);
+	mat4.scale(transform, transform, [3, 6, 3]);
+	mat4.translate(transform, transform, [1, 0, 2]);
 	var sphere = new Entity(undefined, undefined, transform, function(ray) {
 		var a = ray.u[0] * ray.u[0] + ray.u[1] * ray.u[1] + ray.u[2] * ray.u[2];
 		var b = 2 * (ray.p[0] * ray.u[0] + ray.p[1] * ray.u[1] + ray.p[2] * ray.u[2]);
-		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 9;
+		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 1;
 
 		var t_1 = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
 		var t_2 = (-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a);
@@ -56,11 +57,15 @@ function main() {
 		var v;
 
 		if (t_1 && t_1 > 0 && vec3.dot(v_1, ray.u) < 0) {
-			var n = vec3.fromValues(v_1[0] / 3, v_1[1] / 3, v_1[2] / 3)
-			return new Hit(ray, v_1, n, PEWTER);
+			v = v_1;
 		} else if (t_2 && t_2 > 0) {
-			var n = vec3.fromValues(v_2[0] / 3, v_2[1] / 3, v_2[2] / 3)
-			return new Hit(ray, v_2, n, PEWTER);
+			v = v_2;
+		}
+
+		if (v) {
+			m = (Math.floor(v[1] / 0.2) % 2) == 0 ? PEWTER : _PEWTER;
+			var n = vec3.clone(v);
+			return new Hit(ray, v, n, m);
 		} else {
 			return null;
 		}
@@ -68,10 +73,16 @@ function main() {
 	tracer.register(sphere);
 
 	tracer.light(new Light(
-		vec3.fromValues(10.0, 10.0, 10.0),
-		vec3.fromValues(0.5, 0.5, 0.5),
-		vec3.fromValues(0.5, 0.5, 0.5),
-		vec3.fromValues(0.5, 0.5, 0.5)));
+		vec3.fromValues(20.0, 0.0, 20.0),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25)));
+
+	tracer.light(new Light(
+		vec3.fromValues(-20.0, 0.0, 20.0),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25),
+		vec3.fromValues(0.25, 0.25, 0.25)));
 
 	// tracer.light(new Light(
 	// 	vec3.fromValues(10.0, 10.0, 10.0),
@@ -101,12 +112,14 @@ function main() {
 	// dat.GUI
 	var panel = {
 		AntiAliasing: false,
+		Detail: 0,
 		Snap: function() {
 			flag = true;
 		}
 	};
 	var gui = new dat.GUI();
 	gui.add(panel, 'AntiAliasing');
+	gui.add(panel, 'Detail', -8, 0).step(1);
 	gui.add(panel, 'Snap');
 
 	gl.useProgram(program_static);
@@ -132,7 +145,7 @@ function main() {
 
 		if (flag) {
 			flag = false;
-			tracer.snap(panel.AntiAliasing);
+			tracer.snap(panel.AntiAliasing, panel.Detail);
 		}
 
 		gl.useProgram(program_image);
