@@ -39,4 +39,11 @@ var SILVER = new Material(
 	vec3.fromValues(0.19225, 0.19225, 0.19225),
 	vec3.fromValues(0.50754, 0.50754, 0.50754),
 	vec3.fromValues(0.508273, 0.508273, 0.508273),
-	0.4);
+	2.5);
+
+var METAL = new Material(
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(1.0, 1.0, 1.0),
+	2.5);

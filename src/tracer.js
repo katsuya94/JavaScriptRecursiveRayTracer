@@ -169,7 +169,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 
 Tracer.prototype.calculate = function(pixel, ray) {
 	var h = this.trace(ray);
-	if (h) this.propagate(pixel, h, 2);
+	if (h) this.propagate(pixel, h, this.recursion);
 };
 
 Tracer.prototype.sample = function(pixel, x, y) {
@@ -228,7 +228,9 @@ Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) 
 	return image;
 };
 
-Tracer.prototype.snap = function(aa, detail) {
+Tracer.prototype.snap = function(aa, detail, recursion) {
+	this.recursion = recursion;
+
 	var width = gl.drawingBufferWidth * Math.pow(2, detail) / 2;
 	var height = gl.drawingBufferHeight * Math.pow(2, detail);
 
@@ -265,6 +267,8 @@ Tracer.prototype.snap = function(aa, detail) {
 		1.0, -1.0, width / big_width, 0.0,
 		1.0, 1.0, width / big_width, height / big_height
 	]), gl.STATIC_DRAW);
+
+	return Array.prototype.slice.call(camera.rotate).concat(Array.prototype.slice.call(camera.position)).toString();
 };
 
 Tracer.prototype.draw = function() {

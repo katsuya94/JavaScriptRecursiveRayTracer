@@ -35,13 +35,24 @@ function main() {
 	var panel = {
 		AntiAliasing: false,
 		Detail: -2,
+		Recursion: 0,
+		Code: '',
+		UseCode: function() {
+			var array = this.Code.split(',').map(Number.parseFloat);
+			quat.set(camera.rotate, array[0], array[1], array[2], array[3]);
+			vec3.set(camera.position, array[4], array[5], array[6]);
+		},
 		Snap: function() {
 			flag = true;
-		}
+		},
 	};
 	var gui = new dat.GUI();
-	gui.add(panel, 'AntiAliasing');
-	gui.add(panel, 'Detail', -8, 0).step(1);
+	var config = gui.addFolder('Config');
+	config.add(panel, 'AntiAliasing');
+	config.add(panel, 'Detail', -8, 0).step(1);
+	config.add(panel, 'Recursion', 0, 5).step(1);
+	config.add(panel, 'Code').listen();
+	config.add(panel, 'UseCode');
 	gui.add(panel, 'Snap');
 
 	gl.useProgram(program_static);
@@ -67,7 +78,7 @@ function main() {
 
 		if (flag) {
 			flag = false;
-			tracer.snap(panel.AntiAliasing, panel.Detail);
+			panel.Code = tracer.snap(panel.AntiAliasing, panel.Detail, panel.Recursion);
 		}
 
 		gl.useProgram(program_image);

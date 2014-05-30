@@ -85,7 +85,7 @@ function geometry(buffers, tracer) {
 
 		if (v) {
 			var n = vec3.clone(v);
-			return new Hit(ray, v, n, SILVER);
+			return new Hit(ray, v, n, METAL);
 		} else {
 			return null;
 		}
@@ -107,13 +107,13 @@ function geometry(buffers, tracer) {
 
 	tracer.light(new Light(
 		vec3.fromValues(20.0, 0.0, 20.0),
-		vec3.fromValues(0.25, 0.25, 0.25),
-		vec3.fromValues(0.25, 0.25, 0.25),
-		vec3.fromValues(0.25, 0.25, 0.25)));
+		vec3.fromValues(0.5, 0.4, 0.3),
+		vec3.fromValues(0.5, 0.4, 0.3),
+		vec3.fromValues(0.5, 0.4, 0.3)));
 
 	tracer.light(new Light(
 		vec3.fromValues(-20.0, 0.0, 20.0),
-		vec3.fromValues(0.25, 0.25, 0.25),
-		vec3.fromValues(0.25, 0.25, 0.25),
-		vec3.fromValues(0.25, 0.25, 0.25)));
+		vec3.fromValues(0.3, 0.4, 0.5),
+		vec3.fromValues(0.3, 0.4, 0.5),
+		vec3.fromValues(0.3, 0.4, 0.5)));
 }

@@ -8464,7 +8464,7 @@ function geometry(buffers, tracer) {
 
 		if (v) {
 			var n = vec3.clone(v);
-			return new Hit(ray, v, n, SILVER);
+			return new Hit(ray, v, n, METAL);
 		} else {
 			return null;
 		}
@@ -8486,15 +8486,15 @@ function geometry(buffers, tracer) {
 
 	tracer.light(new Light(
 		vec3.fromValues(20.0, 0.0, 20.0),
-		vec3.fromValues(0.25, 0.25, 0.25),
-		vec3.fromValues(0.25, 0.25, 0.25),
-		vec3.fromValues(0.25, 0.25, 0.25)));
+		vec3.fromValues(0.5, 0.4, 0.3),
+		vec3.fromValues(0.5, 0.4, 0.3),
+		vec3.fromValues(0.5, 0.4, 0.3)));
 
 	tracer.light(new Light(
 		vec3.fromValues(-20.0, 0.0, 20.0),
-		vec3.fromValues(0.25, 0.25, 0.25),
-		vec3.fromValues(0.25, 0.25, 0.25),
-		vec3.fromValues(0.25, 0.25, 0.25)));
+		vec3.fromValues(0.3, 0.4, 0.5),
+		vec3.fromValues(0.3, 0.4, 0.5),
+		vec3.fromValues(0.3, 0.4, 0.5)));
 };
 
 // FILE SEPARATOR
@@ -8553,13 +8553,24 @@ function main() {
 	var panel = {
 		AntiAliasing: false,
 		Detail: -2,
+		Recursion: 0,
+		Code: '',
+		UseCode: function() {
+			var array = this.Code.split(',').map(Number.parseFloat);
+			quat.set(camera.rotate, array[0], array[1], array[2], array[3]);
+			vec3.set(camera.position, array[4], array[5], array[6]);
+		},
 		Snap: function() {
 			flag = true;
-		}
+		},
 	};
 	var gui = new dat.GUI();
-	gui.add(panel, 'AntiAliasing');
-	gui.add(panel, 'Detail', -8, 0).step(1);
+	var config = gui.addFolder('Config');
+	config.add(panel, 'AntiAliasing');
+	config.add(panel, 'Detail', -8, 0).step(1);
+	config.add(panel, 'Recursion', 0, 5).step(1);
+	config.add(panel, 'Code').listen();
+	config.add(panel, 'UseCode');
 	gui.add(panel, 'Snap');
 
 	gl.useProgram(program_static);
@@ -8585,7 +8596,7 @@ function main() {
 
 		if (flag) {
 			flag = false;
-			tracer.snap(panel.AntiAliasing, panel.Detail);
+			panel.Code = tracer.snap(panel.AntiAliasing, panel.Detail, panel.Recursion);
 		}
 
 		gl.useProgram(program_image);
@@ -8648,7 +8659,14 @@ var SILVER = new Material(
 	vec3.fromValues(0.19225, 0.19225, 0.19225),
 	vec3.fromValues(0.50754, 0.50754, 0.50754),
 	vec3.fromValues(0.508273, 0.508273, 0.508273),
-	0.4);;
+	2.5);
+
+var METAL = new Material(
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(1.0, 1.0, 1.0),
+	2.5);;
 
 // FILE SEPARATOR
 
@@ -8880,7 +8898,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 
 Tracer.prototype.calculate = function(pixel, ray) {
 	var h = this.trace(ray);
-	if (h) this.propagate(pixel, h, 2);
+	if (h) this.propagate(pixel, h, this.recursion);
 };
 
 Tracer.prototype.sample = function(pixel, x, y) {
@@ -8939,7 +8957,9 @@ Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) 
 	return image;
 };
 
-Tracer.prototype.snap = function(aa, detail) {
+Tracer.prototype.snap = function(aa, detail, recursion) {
+	this.recursion = recursion;
+
 	var width = gl.drawingBufferWidth * Math.pow(2, detail) / 2;
 	var height = gl.drawingBufferHeight * Math.pow(2, detail);
 
@@ -8976,6 +8996,8 @@ Tracer.prototype.snap = function(aa, detail) {
 		1.0, -1.0, width / big_width, 0.0,
 		1.0, 1.0, width / big_width, height / big_height
 	]), gl.STATIC_DRAW);
+
+	return Array.prototype.slice.call(camera.rotate).concat(Array.prototype.slice.call(camera.position)).toString();
 };
 
 Tracer.prototype.draw = function() {
