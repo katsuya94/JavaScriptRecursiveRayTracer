@@ -188,10 +188,11 @@ Tracer.prototype.trace = function(ray, exclude) {
 			vec4.transformMat4(h.o, h.o, e.model);
 
 			h.n = vec4.fromValues(h.n[0], h.n[1], h.n[2], 0);
-			vec4.transformMat4(h.n, h.n, e.model);
+			vec4.transformMat4(h.n, h.n, e.inverse_transpose_model);
+			vec3.normalize(h.n, h.n);
 
 			h.i = vec4.fromValues(h.i[0], h.i[1], h.i[2], 0);
-			vec4.transformMat4(h.i, h.i, e.inverse_transpose_model);
+			vec4.transformMat4(h.i, h.i, e.model);
 
 			h.d = vec4.fromValues(h.d[0], h.d[1], h.d[2], 0);
 			vec4.transformMat4(h.d, h.d, e.model);
