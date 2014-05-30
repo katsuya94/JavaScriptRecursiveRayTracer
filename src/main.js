@@ -112,7 +112,7 @@ function main() {
 	// dat.GUI
 	var panel = {
 		AntiAliasing: false,
-		Detail: 0,
+		Detail: -2,
 		Snap: function() {
 			flag = true;
 		}

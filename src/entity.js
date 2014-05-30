@@ -12,5 +12,8 @@ function Entity(vertices, indices, model, hit) {
 	this.inverse_transpose_model = mat4.create();
 	mat4.transpose(this.inverse_transpose_model, this.inverse_model);
 
+	this.transpose_model = mat4.create();
+	mat4.transpose(this.transpose_model, this.model);
+
 	this.hit = hit;
 }
