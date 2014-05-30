@@ -27,7 +27,6 @@ function main() {
 
 	// Geometry
 	geometry(buffers, tracer);
-
 	buffers.populate();
 
 	var flag = true;
