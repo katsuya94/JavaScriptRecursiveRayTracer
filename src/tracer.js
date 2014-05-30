@@ -126,9 +126,10 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 		vec3.add(ambient, ambient, l.a);
 
 		vec3.sub(shadow, l.o, hit.o);
+		var d = vec3.len(shadow);
 		vec3.normalize(shadow, shadow);
 
-		if (!this.trace(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), hit.id)) {
+		if (!this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), vec3.len(shadow), hit.id)) {
 			vec3.scaleAndAdd(diffuse, diffuse, l.d, Math.max(0, vec3.dot(hit.n, shadow)));
 		}
 
@@ -142,24 +143,47 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 	vec3.add(pixel, pixel, ambient);
 	vec3.add(pixel, pixel, diffuse);
 	vec3.add(pixel, pixel, specular);
-}
+};
+
+Tracer.prototype.intersect = function(ray, entity) {
+	var model_ray = new Ray(vec4.fromValues(ray.p[0], ray.p[1], ray.p[2], 1), vec4.fromValues(ray.u[0], ray.u[1], ray.u[2], 0));
+	vec4.transformMat4(model_ray.p, model_ray.p, entity.inverse_model);
+	vec4.transformMat4(model_ray.u, model_ray.u, entity.inverse_model);
+
+	return entity.hit(model_ray);
+};
+
+Tracer.prototype.blocks = function(ray, distance, exclude) {
+	for (var i = 0; i < this.entities.length; i++) {
+		if (i === exclude) continue;
+
+		var e = this.entities[i];
+		var h = this.intersect(ray, e);
+
+		if (h) {
+			h.id = i;
+
+			h.d = vec4.fromValues(h.d[0], h.d[1], h.d[2], 0);
+			vec4.transformMat4(h.d, h.d, e.model);
+
+			if (vec3.len(h.d) < distance) return true;
+		}
+	}
+	return false;
+};
 
 Tracer.prototype.trace = function(ray, exclude) {
 	var close = null;
 
 	for (var i = 0; i < this.entities.length; i++) {
-		if (i === exclude)
-			continue;
+		if (i === exclude) continue;
 
 		var e = this.entities[i];
-		
-		var model_ray = new Ray(vec4.fromValues(ray.p[0], ray.p[1], ray.p[2], 1), vec4.fromValues(ray.u[0], ray.u[1], ray.u[2], 0));
-		vec4.transformMat4(model_ray.p, model_ray.p, e.inverse_model);
-		vec4.transformMat4(model_ray.u, model_ray.u, e.inverse_model);
-
-		var h = this.entities[i].hit(model_ray);
+		var h = this.intersect(ray, e);
 
 		if (h) {
+			h.id = i;
+
 			h.o = vec4.fromValues(h.o[0], h.o[1], h.o[2], 1);
 			vec4.transformMat4(h.o, h.o, e.model);
 
@@ -171,8 +195,6 @@ Tracer.prototype.trace = function(ray, exclude) {
 
 			h.d = vec4.fromValues(h.d[0], h.d[1], h.d[2], 0);
 			vec4.transformMat4(h.d, h.d, e.model);
-
-			h.id = i;
 
 			if (close) {
 				if (vec3.len(h.d) < vec3.len(close.d)) {
