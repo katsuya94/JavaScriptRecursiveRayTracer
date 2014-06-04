@@ -4,6 +4,8 @@
 /* global ASIZE, ESIZE, VSIZE */
 /* exported init_buffers */
 
+var NIL = vec3.create();
+
 var X = vec3.fromValues(1.0, 0.0, 0.0);
 var _X = vec3.fromValues(-1.0, 0.0, 0.0);
 var Y = vec3.fromValues(0.0, 1.0, 0.0);
@@ -90,7 +92,9 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 			vec3.scaleAndAdd(diffuse, diffuse, l.d, Math.max(0, vec3.dot(hit.n, shadow)));
 		}
 
-		vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
+		if (!h) {
+			vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
+		}
 	}
 
 	vec3.mul(ambient, hit.mat.a, ambient);

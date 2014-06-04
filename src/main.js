@@ -42,6 +42,8 @@ function main() {
 			quat.set(camera.rotate, array[0], array[1], array[2], array[3]);
 			vec3.set(camera.position, array[4], array[5], array[6]);
 		},
+		Toggle: false,
+		ContinuousDetail: -4,
 		Snap: function() {
 			flag = true;
 		},
@@ -53,6 +55,9 @@ function main() {
 	config.add(panel, 'Recursion', 0, 5).step(1);
 	config.add(panel, 'Code').listen();
 	config.add(panel, 'UseCode');
+	var continuous = gui.addFolder('Continuous');
+	continuous.add(panel, 'Toggle');
+	continuous.add(panel, 'ContinuousDetail', -8, 0).step(1);
 	gui.add(panel, 'Snap');
 
 	gl.useProgram(program_static);
@@ -79,6 +84,10 @@ function main() {
 		if (flag) {
 			flag = false;
 			panel.Code = tracer.snap(panel.AntiAliasing, panel.Detail, panel.Recursion);
+		}
+
+		if (panel.Toggle) {
+			panel.Code = tracer.snap(false, panel.ContinuousDetail, 0);
 		}
 
 		gl.useProgram(program_image);

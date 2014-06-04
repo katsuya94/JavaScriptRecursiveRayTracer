@@ -8404,41 +8404,7 @@ function geometry(buffers, tracer) {
 	buffers.arrayDraw(floor, 'LINES');
 	tracer.register(floor);
 
-	var transform = mat4.create();
-	mat4.scale(transform, transform, [3, 6, 3]);
-	mat4.translate(transform, transform, [0, 0, 3]);
-
-	var egg = new Entity(undefined, undefined, transform, function(ray) {
-		var a = ray.u[0] * ray.u[0] + ray.u[1] * ray.u[1] + ray.u[2] * ray.u[2];
-		var b = 2 * (ray.p[0] * ray.u[0] + ray.p[1] * ray.u[1] + ray.p[2] * ray.u[2]);
-		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 1;
-
-		var t_1 = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-		var t_2 = (-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-
-		var v_1 = vec3.create();
-		if (t_1 && t_1 > 0) vec3.scaleAndAdd(v_1, ray.p, ray.u, t_1);
-
-		var v_2 = vec3.create();
-		if (t_2 && t_2 > 0) vec3.scaleAndAdd(v_2, ray.p, ray.u, t_2);
-
-		var v;
-
-		if (t_1 && t_1 > 0 && vec3.dot(v_1, ray.u) < 0) {
-			v = v_1;
-		} else if (t_2 && t_2 > 0) {
-			v = v_2;
-		}
-
-		if (v) {
-			m = (Math.floor(v[1] / 0.2) % 2) == 0 ? PEWTER : _PEWTER;
-			var n = vec3.clone(v);
-			return new Hit(ray, v, n, m);
-		} else {
-			return null;
-		}
-	});
-	tracer.register(egg);
+	// Spheres
 
 	var metal = function(ray) {
 		var a = ray.u[0] * ray.u[0] + ray.u[1] * ray.u[1] + ray.u[2] * ray.u[2];
@@ -8456,8 +8422,12 @@ function geometry(buffers, tracer) {
 
 		var v;
 
-		if (t_1 && t_1 > 0 && vec3.dot(v_1, ray.u) < 0) {
-			v = v_1;
+		if(t_1 && t_1 > 0) {
+			if (t_2) {
+				v = t_1 < t_2 ? v_1 : v_2;
+			} else {
+				v = v_1;
+			}
 		} else if (t_2 && t_2 > 0) {
 			v = v_2;
 		}
@@ -8470,19 +8440,110 @@ function geometry(buffers, tracer) {
 		}
 	}
 
-	transform = mat4.create();
+	var transform = mat4.create();
+	mat4.translate(transform, transform, [0, 0, 2]);
 	mat4.scale(transform, transform, [2, 2, 2]);
-	mat4.translate(transform, transform, [1, 0, 1]);
 
 	var sphere_a = new Entity(undefined, undefined, transform, metal);
 	tracer.register(sphere_a);
 
 	transform = mat4.create();
-	mat4.scale(transform, transform, [2, 2, 2]);
-	mat4.translate(transform, transform, [-1, 0, 1]);
+	mat4.translate(transform, transform, [-2.5, 0, 2]);
+	mat4.scale(transform, transform, [0.5, 2, 2]);
 
 	var sphere_b = new Entity(undefined, undefined, transform, metal);
 	tracer.register(sphere_b);
+
+	transform = mat4.create();
+	mat4.translate(transform, transform, [2.5, 0, 2]);
+	mat4.scale(transform, transform, [0.5, 2, 2]);
+
+	var sphere_c = new Entity(undefined, undefined, transform, metal);
+	tracer.register(sphere_c);
+
+	transform = mat4.create();
+	mat4.translate(transform, transform, [0, -2.5, 2]);
+	mat4.scale(transform, transform, [2, 0.5, 2]);
+
+	var sphere_d = new Entity(undefined, undefined, transform, metal);
+	tracer.register(sphere_d);
+
+	transform = mat4.create();
+	mat4.translate(transform, transform, [0, 2.5, 2]);
+	mat4.scale(transform, transform, [2, 0.5, 2]);
+
+	var sphere_e = new Entity(undefined, undefined, transform, metal);
+	tracer.register(sphere_e);
+
+	// Cylinders
+
+	// Cube
+	var sample = function() { return vec3.fromValues(1.0, 0.0, 1.0); };
+	var tex = new Image();
+	tex.addEventListener('load', function() {
+		var ctx = document.createElement('canvas').getContext('2d');
+		ctx.canvas.width = tex.width;
+		ctx.canvas.height = tex.height;
+		ctx.drawImage(tex, 0, 0);
+		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
+		sample = function(x, y) {
+			x = ~~(x * tex.width);
+			y = ~~(y * tex.height);
+			return vec3.fromValues(
+				data[tex.width * 4 * y + x * 4] / 256,
+				data[tex.width * 4 * y + x * 4 + 1] / 256,
+				data[tex.width * 4 * y + x * 4 + 2] / 256);
+		}
+	}, false);
+	tex.src = 'normal.jpg';
+
+	var side = function(ray, n, u, v, a, b) {
+		var d = vec3.dot(ray.u, n);
+		if (d < 0) {
+			var t = -(vec3.dot(ray.p, n) - 1) / d;
+			if (t > 0) {
+				var origin = vec3.create();
+				vec3.scaleAndAdd(origin, ray.p, ray.u, t);
+				var normal = vec3.clone(n);
+				var s = sample(origin[a] / 2 + 0.5, origin[b] / 2 + 0.5);
+				vec3.scaleAndAdd(normal, normal, u, (s[0] - 0.5) * 2);
+				vec3.scaleAndAdd(normal, normal, v, (s[1] - 0.5) * 2);
+				vec3.normalize(normal, normal);
+				if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
+					return new Hit(ray, origin, normal, PEWTER);
+				}
+			}
+		}
+		return null;
+	};
+
+	var cube = function(ray) {
+		var h;
+
+		h = side(ray, X, Y, Z, 1, 2);
+		if (h) return h;
+		h = side(ray, _X, _Y, _Z, 1, 2);
+		if (h) return h;
+		h = side(ray, Y, Z, X, 0, 2);
+		if (h) return h;
+		h = side(ray, _Y, _Z, _X, 0, 2);
+		if (h) return h;
+		h = side(ray, Z, X, Y, 0, 1);
+		if (h) return h;
+		h = side(ray, _Z, _X, _Y, 0, 1);
+		if (h) return h;
+		
+
+		return null;
+	};
+
+	transform = mat4.create();
+	mat4.translate(transform, transform, [5, 5, 2 * Math.sqrt(2) * Math.sqrt(2)]);
+	mat4.scale(transform, transform, [2, 2, 2]);
+	mat4.rotate(transform, transform, Math.PI / 4, [-1, 1, 0]);
+
+	var cube_a = new Entity(undefined, undefined, transform, cube);
+	tracer.register(cube_a);
 
 	tracer.light(new Light(
 		vec3.fromValues(20.0, 0.0, 20.0),
@@ -8560,6 +8621,8 @@ function main() {
 			quat.set(camera.rotate, array[0], array[1], array[2], array[3]);
 			vec3.set(camera.position, array[4], array[5], array[6]);
 		},
+		Toggle: false,
+		ContinuousDetail: -4,
 		Snap: function() {
 			flag = true;
 		},
@@ -8571,6 +8634,9 @@ function main() {
 	config.add(panel, 'Recursion', 0, 5).step(1);
 	config.add(panel, 'Code').listen();
 	config.add(panel, 'UseCode');
+	var continuous = gui.addFolder('Continuous');
+	continuous.add(panel, 'Toggle');
+	continuous.add(panel, 'ContinuousDetail', -8, 0).step(1);
 	gui.add(panel, 'Snap');
 
 	gl.useProgram(program_static);
@@ -8597,6 +8663,10 @@ function main() {
 		if (flag) {
 			flag = false;
 			panel.Code = tracer.snap(panel.AntiAliasing, panel.Detail, panel.Recursion);
+		}
+
+		if (panel.Toggle) {
+			panel.Code = tracer.snap(false, panel.ContinuousDetail, 0);
 		}
 
 		gl.useProgram(program_image);
@@ -8733,6 +8803,8 @@ function sphere(offset, x, y, z) {
 /* global ASIZE, ESIZE, VSIZE */
 /* exported init_buffers */
 
+var NIL = vec3.create();
+
 var X = vec3.fromValues(1.0, 0.0, 0.0);
 var _X = vec3.fromValues(-1.0, 0.0, 0.0);
 var Y = vec3.fromValues(0.0, 1.0, 0.0);
@@ -8819,7 +8891,9 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 			vec3.scaleAndAdd(diffuse, diffuse, l.d, Math.max(0, vec3.dot(hit.n, shadow)));
 		}
 
-		vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
+		if (!h) {
+			vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
+		}
 	}
 
 	vec3.mul(ambient, hit.mat.a, ambient);
