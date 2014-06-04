@@ -8396,8 +8396,9 @@ function geometry(buffers, tracer) {
 
 	var floor = new Entity(grid(), undefined, mat4.create(), function(ray) {
 		var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
-		return t < 0 ? null : t;
-	}, function(ray, origin) {
+		return t > 0 ? { t: t } : null;
+	}, function(ray, col) {
+		var origin = param_ray(ray, col.t);
 		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
 		return new Hit(ray, origin, Z, m)
 	});
@@ -8414,20 +8415,24 @@ function geometry(buffers, tracer) {
 		var t_1 = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
 		var t_2 = (-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a);
 
+		var t;
+
 		if (t_1 && t_1 > 0) {
 			if (t_2 && t_2 > 0) {
-				return t_1 < t_2 ? t_1 : t_2;
+				t = t_1 < t_2 ? t_1 : t_2;
 			} else {
-				return t_1;
+				t = t_1;
 			}
 		} else if (t_2 && t_2 > 0) {
-			return t_2;
+			t = t_2;
 		} else {
 			return null;
 		}
+		return { t: t };
 	}
 
-	var metal = function(ray, origin) {
+	var metal = function(ray, col) {
+		var origin = param_ray(ray, col.t);
 		return new Hit(ray, origin, origin, METAL);
 	}
 
@@ -8469,72 +8474,74 @@ function geometry(buffers, tracer) {
 	// Cylinders
 
 	// Cube
-	// var sample = function() { return vec3.fromValues(1.0, 0.0, 1.0); };
-	// var tex = new Image();
-	// tex.addEventListener('load', function() {
-	// 	var ctx = document.createElement('canvas').getContext('2d');
-	// 	ctx.canvas.width = tex.width;
-	// 	ctx.canvas.height = tex.height;
-	// 	ctx.drawImage(tex, 0, 0);
-	// 	data = ctx.getImageData(0, 0, tex.width, tex.height).data;
-	// 	sample = function(x, y) {
-	// 		x = ~~(x * tex.width);
-	// 		y = ~~(y * tex.height);
-	// 		return vec3.fromValues(
-	// 			data[tex.width * 4 * y + x * 4] / 256,
-	// 			data[tex.width * 4 * y + x * 4 + 1] / 256,
-	// 			data[tex.width * 4 * y + x * 4 + 2] / 256);
-	// 	}
-	// }, false);
-	// tex.src = 'normal.jpg';
+	var sample = function() { return vec3.fromValues(1.0, 0.0, 1.0); };
+	var tex = new Image();
+	tex.addEventListener('load', function() {
+		var ctx = document.createElement('canvas').getContext('2d');
+		ctx.canvas.width = tex.width;
+		ctx.canvas.height = tex.height;
+		ctx.drawImage(tex, 0, 0);
+		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
+		sample = function(x, y) {
+			x = ~~(x * tex.width);
+			y = ~~(y * tex.height);
+			return vec3.fromValues(
+				data[tex.width * 4 * y + x * 4] / 256,
+				data[tex.width * 4 * y + x * 4 + 1] / 256,
+				data[tex.width * 4 * y + x * 4 + 2] / 256);
+		}
+	}, false);
+	tex.src = 'normal.jpg';
 
-	// var side = function(ray, n, u, v, a, b) {
-	// 	var d = vec3.dot(ray.u, n);
-	// 	if (d < 0) {
-	// 		var t = -(vec3.dot(ray.p, n) - 1) / d;
-	// 		if (t > 0) {
-	// 			var origin = vec3.create();
-	// 			vec3.scaleAndAdd(origin, ray.p, ray.u, t);
-	// 			var normal = vec3.clone(n);
-	// 			var s = sample(origin[a] / 2 + 0.5, origin[b] / 2 + 0.5);
-	// 			vec3.scaleAndAdd(normal, normal, u, (s[0] - 0.5) * 2);
-	// 			vec3.scaleAndAdd(normal, normal, v, (s[1] - 0.5) * 2);
-	// 			vec3.normalize(normal, normal);
-	// 			if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
-	// 				return new Hit(ray, origin, normal, PEWTER);
-	// 			}
-	// 		}
-	// 	}
-	// 	return null;
-	// };
+	var side = function(ray, n, u, v, a, b) {
+		var d = vec3.dot(ray.u, n);
+		if (d < 0) {
+			var t = -(vec3.dot(ray.p, n) - 1) / d;
+			if (t > 0) {
+				var origin = param_ray(ray, t);
+				if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
+					return { t: t, origin: origin, normal: n, a: a, b: b, u: u, v: v }
+				}
+			}
+		}
+		return null;
+	};
 
-	// var cube = function(ray) {
-	// 	var h;
+	var cube = function(ray) {
+		var h;
 
-	// 	h = side(ray, X, Y, Z, 1, 2);
-	// 	if (h) return h;
-	// 	h = side(ray, _X, _Y, _Z, 1, 2);
-	// 	if (h) return h;
-	// 	h = side(ray, Y, Z, X, 0, 2);
-	// 	if (h) return h;
-	// 	h = side(ray, _Y, _Z, _X, 0, 2);
-	// 	if (h) return h;
-	// 	h = side(ray, Z, X, Y, 0, 1);
-	// 	if (h) return h;
-	// 	h = side(ray, _Z, _X, _Y, 0, 1);
-	// 	if (h) return h;
+		h = side(ray, X, Y, Z, 1, 2);
+		if (h) return h;
+		h = side(ray, _X, _Y, _Z, 1, 2);
+		if (h) return h;
+		h = side(ray, Y, Z, X, 0, 2);
+		if (h) return h;
+		h = side(ray, _Y, _Z, _X, 0, 2);
+		if (h) return h;
+		h = side(ray, Z, X, Y, 0, 1);
+		if (h) return h;
+		h = side(ray, _Z, _X, _Y, 0, 1);
+		if (h) return h;
 		
+		return null;
+	};
 
-	// 	return null;
-	// };
+	var cube_hit = function(ray, col) {
+		var normal = vec3.clone(col.normal);
+		var s = sample(col.origin[col.a] / 2 + 0.5, col.origin[col.b] / 2 + 0.5);
+		vec3.scaleAndAdd(normal, normal, col.u, (s[0] - 0.5) * 2);
+		vec3.scaleAndAdd(normal, normal, col.v, (s[1] - 0.5) * 2);
+		vec3.normalize(normal, normal);
+		return new Hit(ray, col.origin, normal, PEWTER)
+	}
 
-	// transform = mat4.create();
-	// mat4.translate(transform, transform, [5, 5, 2 * Math.sqrt(2) * Math.sqrt(2)]);
-	// mat4.scale(transform, transform, [2, 2, 2]);
-	// mat4.rotate(transform, transform, Math.PI / 4, [-1, 1, 0]);
+	transform = mat4.create();
+	mat4.translate(transform, transform, [5, 5, 2 * Math.sqrt(2) * Math.sqrt(2)]);
+	mat4.scale(transform, transform, [2, 2, 2]);
+	mat4.rotate(transform, transform, Math.PI / 4, [-1, 1, 0]);
 
-	// var cube_a = new Entity(undefined, undefined, transform, cube);
-	// tracer.register(cube_a);
+	var cube_a = new Entity(undefined, undefined, transform, cube, cube_hit);
+	tracer.register(cube_a);
 
 	tracer.light(new Light(
 		vec3.fromValues(20.0, 0.0, 20.0),
@@ -8875,12 +8882,13 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 		var d = vec3.len(shadow);
 		vec3.normalize(shadow, shadow);
 
-		if (!this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), d, hit.id)) {
-			vec3.scaleAndAdd(diffuse, diffuse, l.d, Math.max(0, vec3.dot(hit.n, shadow)));
-		}
+		var lambertian = vec3.dot(hit.n, shadow);
 
-		if (!h) {
-			vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
+		if (lambertian > 0) {
+			if (!this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), d, hit.id)) {
+				vec3.scaleAndAdd(diffuse, diffuse, l.d, lambertian);
+				vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
+			}
 		}
 	}
 
@@ -8906,10 +8914,10 @@ Tracer.prototype.blocks = function(ray, distance, exclude) {
 
 		var e = this.entities[i];
 		var m_ray = this.world_ray_to_model(ray, e);
-		var t = e.col(m_ray);
+		var col = e.col(m_ray);
 
-		if (t !== null) {
-			var disp = vec4.fromValues(t * ray.u[0], t * ray.u[1], t * ray.u[2], 0);
+		if (col !== null) {
+			var disp = vec4.fromValues(col.t * ray.u[0], col.t * ray.u[1], col.t * ray.u[2], 0);
 			vec4.transformMat4(disp, disp, e.inverse_transpose_model);
 			var dist = vec3.len(disp);
 			if (dist < distance)
@@ -8923,7 +8931,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 	var dist = null;
 	var disp = null;
 	var m_ray = null;
-	var t = null;
+	var col = null;
 	var id = null;
 
 	for (var i = 0; i < this.entities.length; i++) {
@@ -8931,10 +8939,10 @@ Tracer.prototype.trace = function(ray, exclude) {
 
 		var _e = this.entities[i];
 		var _m_ray = this.world_ray_to_model(ray, _e);
-		var _t = _e.col(_m_ray);
+		var _col = _e.col(_m_ray);
 
-		if (_t !== null ) {
-			var _disp = vec4.fromValues(_t * _m_ray.u[0], _t * _m_ray.u[1], _t * _m_ray.u[2], 0);
+		if (_col !== null ) {
+			var _disp = vec4.fromValues(_col.t * _m_ray.u[0], _col.t * _m_ray.u[1], _col.t * _m_ray.u[2], 0);
 			vec4.transformMat4(_disp, _disp, _e.model);
 			var _dist = vec3.len(_disp);
 
@@ -8942,7 +8950,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 				dist = _dist;
 				disp = _disp;
 				m_ray = _m_ray;
-				t = _t;
+				col = _col;
 				id = i;
 			} 
 		}
@@ -8951,12 +8959,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 	if (id !== null) {
 		var e = this.entities[id];
 
-		var origin = vec3.fromValues(m_ray.p[0] + m_ray.u[0] * t, m_ray.p[1] + m_ray.u[1] * t, m_ray.p[2] + m_ray.u[2] * t)
-		try {
-			h = e.hit(m_ray, origin);
-		} catch (e) {
-			console.log(id);
-		}
+		var h = e.hit(m_ray, col);
 
 		h.o = vec4.fromValues(h.o[0], h.o[1], h.o[2], 1);
 		vec4.transformMat4(h.o, h.o, e.model);
@@ -9128,4 +9131,8 @@ function resize() {
 
 Math.baseLog = function(x, y) {
     return Math.log(y) / Math.log(x);
+}
+
+function param_ray(ray, t) {
+	return vec3.fromValues(ray.p[0] + ray.u[0] * t, ray.p[1] + ray.u[1] * t, ray.p[2] + ray.u[2] * t)
 }

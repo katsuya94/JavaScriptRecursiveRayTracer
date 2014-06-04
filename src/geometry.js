@@ -16,8 +16,9 @@ function geometry(buffers, tracer) {
 
 	var floor = new Entity(grid(), undefined, mat4.create(), function(ray) {
 		var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
-		return t < 0 ? null : t;
-	}, function(ray, origin) {
+		return t > 0 ? { t: t } : null;
+	}, function(ray, col) {
+		var origin = param_ray(ray, col.t);
 		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
 		return new Hit(ray, origin, Z, m)
 	});
@@ -34,20 +35,24 @@ function geometry(buffers, tracer) {
 		var t_1 = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
 		var t_2 = (-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a);
 
+		var t;
+
 		if (t_1 && t_1 > 0) {
 			if (t_2 && t_2 > 0) {
-				return t_1 < t_2 ? t_1 : t_2;
+				t = t_1 < t_2 ? t_1 : t_2;
 			} else {
-				return t_1;
+				t = t_1;
 			}
 		} else if (t_2 && t_2 > 0) {
-			return t_2;
+			t = t_2;
 		} else {
 			return null;
 		}
+		return { t: t };
 	}
 
-	var metal = function(ray, origin) {
+	var metal = function(ray, col) {
+		var origin = param_ray(ray, col.t);
 		return new Hit(ray, origin, origin, METAL);
 	}
 
@@ -89,72 +94,74 @@ function geometry(buffers, tracer) {
 	// Cylinders
 
 	// Cube
-	// var sample = function() { return vec3.fromValues(1.0, 0.0, 1.0); };
-	// var tex = new Image();
-	// tex.addEventListener('load', function() {
-	// 	var ctx = document.createElement('canvas').getContext('2d');
-	// 	ctx.canvas.width = tex.width;
-	// 	ctx.canvas.height = tex.height;
-	// 	ctx.drawImage(tex, 0, 0);
-	// 	data = ctx.getImageData(0, 0, tex.width, tex.height).data;
-	// 	sample = function(x, y) {
-	// 		x = ~~(x * tex.width);
-	// 		y = ~~(y * tex.height);
-	// 		return vec3.fromValues(
-	// 			data[tex.width * 4 * y + x * 4] / 256,
-	// 			data[tex.width * 4 * y + x * 4 + 1] / 256,
-	// 			data[tex.width * 4 * y + x * 4 + 2] / 256);
-	// 	}
-	// }, false);
-	// tex.src = 'normal.jpg';
+	var sample = function() { return vec3.fromValues(1.0, 0.0, 1.0); };
+	var tex = new Image();
+	tex.addEventListener('load', function() {
+		var ctx = document.createElement('canvas').getContext('2d');
+		ctx.canvas.width = tex.width;
+		ctx.canvas.height = tex.height;
+		ctx.drawImage(tex, 0, 0);
+		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
+		sample = function(x, y) {
+			x = ~~(x * tex.width);
+			y = ~~(y * tex.height);
+			return vec3.fromValues(
+				data[tex.width * 4 * y + x * 4] / 256,
+				data[tex.width * 4 * y + x * 4 + 1] / 256,
+				data[tex.width * 4 * y + x * 4 + 2] / 256);
+		}
+	}, false);
+	tex.src = 'normal.jpg';
 
-	// var side = function(ray, n, u, v, a, b) {
-	// 	var d = vec3.dot(ray.u, n);
-	// 	if (d < 0) {
-	// 		var t = -(vec3.dot(ray.p, n) - 1) / d;
-	// 		if (t > 0) {
-	// 			var origin = vec3.create();
-	// 			vec3.scaleAndAdd(origin, ray.p, ray.u, t);
-	// 			var normal = vec3.clone(n);
-	// 			var s = sample(origin[a] / 2 + 0.5, origin[b] / 2 + 0.5);
-	// 			vec3.scaleAndAdd(normal, normal, u, (s[0] - 0.5) * 2);
-	// 			vec3.scaleAndAdd(normal, normal, v, (s[1] - 0.5) * 2);
-	// 			vec3.normalize(normal, normal);
-	// 			if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
-	// 				return new Hit(ray, origin, normal, PEWTER);
-	// 			}
-	// 		}
-	// 	}
-	// 	return null;
-	// };
+	var side = function(ray, n, u, v, a, b) {
+		var d = vec3.dot(ray.u, n);
+		if (d < 0) {
+			var t = -(vec3.dot(ray.p, n) - 1) / d;
+			if (t > 0) {
+				var origin = param_ray(ray, t);
+				if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
+					return { t: t, origin: origin, normal: n, a: a, b: b, u: u, v: v }
+				}
+			}
+		}
+		return null;
+	};
 
-	// var cube = function(ray) {
-	// 	var h;
+	var cube = function(ray) {
+		var h;
 
-	// 	h = side(ray, X, Y, Z, 1, 2);
-	// 	if (h) return h;
-	// 	h = side(ray, _X, _Y, _Z, 1, 2);
-	// 	if (h) return h;
-	// 	h = side(ray, Y, Z, X, 0, 2);
-	// 	if (h) return h;
-	// 	h = side(ray, _Y, _Z, _X, 0, 2);
-	// 	if (h) return h;
-	// 	h = side(ray, Z, X, Y, 0, 1);
-	// 	if (h) return h;
-	// 	h = side(ray, _Z, _X, _Y, 0, 1);
-	// 	if (h) return h;
+		h = side(ray, X, Y, Z, 1, 2);
+		if (h) return h;
+		h = side(ray, _X, _Y, _Z, 1, 2);
+		if (h) return h;
+		h = side(ray, Y, Z, X, 0, 2);
+		if (h) return h;
+		h = side(ray, _Y, _Z, _X, 0, 2);
+		if (h) return h;
+		h = side(ray, Z, X, Y, 0, 1);
+		if (h) return h;
+		h = side(ray, _Z, _X, _Y, 0, 1);
+		if (h) return h;
 		
+		return null;
+	};
 
-	// 	return null;
-	// };
+	var cube_hit = function(ray, col) {
+		var normal = vec3.clone(col.normal);
+		var s = sample(col.origin[col.a] / 2 + 0.5, col.origin[col.b] / 2 + 0.5);
+		vec3.scaleAndAdd(normal, normal, col.u, (s[0] - 0.5) * 2);
+		vec3.scaleAndAdd(normal, normal, col.v, (s[1] - 0.5) * 2);
+		vec3.normalize(normal, normal);
+		return new Hit(ray, col.origin, normal, PEWTER)
+	}
 
-	// transform = mat4.create();
-	// mat4.translate(transform, transform, [5, 5, 2 * Math.sqrt(2) * Math.sqrt(2)]);
-	// mat4.scale(transform, transform, [2, 2, 2]);
-	// mat4.rotate(transform, transform, Math.PI / 4, [-1, 1, 0]);
+	transform = mat4.create();
+	mat4.translate(transform, transform, [5, 5, 2 * Math.sqrt(2) * Math.sqrt(2)]);
+	mat4.scale(transform, transform, [2, 2, 2]);
+	mat4.rotate(transform, transform, Math.PI / 4, [-1, 1, 0]);
 
-	// var cube_a = new Entity(undefined, undefined, transform, cube);
-	// tracer.register(cube_a);
+	var cube_a = new Entity(undefined, undefined, transform, cube, cube_hit);
+	tracer.register(cube_a);
 
 	tracer.light(new Light(
 		vec3.fromValues(20.0, 0.0, 20.0),

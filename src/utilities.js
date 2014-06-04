@@ -42,3 +42,7 @@ function resize() {
 Math.baseLog = function(x, y) {
     return Math.log(y) / Math.log(x);
 }
+
+function param_ray(ray, t) {
+	return vec3.fromValues(ray.p[0] + ray.u[0] * t, ray.p[1] + ray.u[1] * t, ray.p[2] + ray.u[2] * t)
+}

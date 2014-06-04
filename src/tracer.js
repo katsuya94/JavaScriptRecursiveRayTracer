@@ -85,12 +85,13 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 		var d = vec3.len(shadow);
 		vec3.normalize(shadow, shadow);
 
-		if (!this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), d, hit.id)) {
-			vec3.scaleAndAdd(diffuse, diffuse, l.d, Math.max(0, vec3.dot(hit.n, shadow)));
-		}
+		var lambertian = vec3.dot(hit.n, shadow);
 
-		if (!h) {
-			vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
+		if (lambertian > 0) {
+			if (!this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), d, hit.id)) {
+				vec3.scaleAndAdd(diffuse, diffuse, l.d, lambertian);
+				vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
+			}
 		}
 	}
 
@@ -116,10 +117,10 @@ Tracer.prototype.blocks = function(ray, distance, exclude) {
 
 		var e = this.entities[i];
 		var m_ray = this.world_ray_to_model(ray, e);
-		var t = e.col(m_ray);
+		var col = e.col(m_ray);
 
-		if (t !== null) {
-			var disp = vec4.fromValues(t * ray.u[0], t * ray.u[1], t * ray.u[2], 0);
+		if (col !== null) {
+			var disp = vec4.fromValues(col.t * ray.u[0], col.t * ray.u[1], col.t * ray.u[2], 0);
 			vec4.transformMat4(disp, disp, e.inverse_transpose_model);
 			var dist = vec3.len(disp);
 			if (dist < distance)
@@ -133,7 +134,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 	var dist = null;
 	var disp = null;
 	var m_ray = null;
-	var t = null;
+	var col = null;
 	var id = null;
 
 	for (var i = 0; i < this.entities.length; i++) {
@@ -141,10 +142,10 @@ Tracer.prototype.trace = function(ray, exclude) {
 
 		var _e = this.entities[i];
 		var _m_ray = this.world_ray_to_model(ray, _e);
-		var _t = _e.col(_m_ray);
+		var _col = _e.col(_m_ray);
 
-		if (_t !== null ) {
-			var _disp = vec4.fromValues(_t * _m_ray.u[0], _t * _m_ray.u[1], _t * _m_ray.u[2], 0);
+		if (_col !== null ) {
+			var _disp = vec4.fromValues(_col.t * _m_ray.u[0], _col.t * _m_ray.u[1], _col.t * _m_ray.u[2], 0);
 			vec4.transformMat4(_disp, _disp, _e.model);
 			var _dist = vec3.len(_disp);
 
@@ -152,7 +153,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 				dist = _dist;
 				disp = _disp;
 				m_ray = _m_ray;
-				t = _t;
+				col = _col;
 				id = i;
 			} 
 		}
@@ -161,12 +162,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 	if (id !== null) {
 		var e = this.entities[id];
 
-		var origin = vec3.fromValues(m_ray.p[0] + m_ray.u[0] * t, m_ray.p[1] + m_ray.u[1] * t, m_ray.p[2] + m_ray.u[2] * t)
-		try {
-			h = e.hit(m_ray, origin);
-		} catch (e) {
-			console.log(id);
-		}
+		var h = e.hit(m_ray, col);
 
 		h.o = vec4.fromValues(h.o[0], h.o[1], h.o[2], 1);
 		vec4.transformMat4(h.o, h.o, e.model);
