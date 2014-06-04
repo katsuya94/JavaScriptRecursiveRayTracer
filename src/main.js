@@ -34,7 +34,7 @@ function main() {
 	// dat.GUI
 	var panel = {
 		AntiAliasing: false,
-		Detail: -2,
+		Detail: -1,
 		Recursion: 0,
 		Code: '',
 		UseCode: function() {

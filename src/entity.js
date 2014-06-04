@@ -1,7 +1,7 @@
 /* jshint strict: false */
 /* exported Entity */
 
-function Entity(vertices, indices, model, hit) {
+function Entity(vertices, indices, model, col, hit) {
 	this.vertices = vertices;
 	this.indices = indices;
 	this.model = model;
@@ -15,5 +15,6 @@ function Entity(vertices, indices, model, hit) {
 	this.transpose_model = mat4.create();
 	mat4.transpose(this.transpose_model, this.model);
 
+	this.col = col;
 	this.hit = hit;
 }

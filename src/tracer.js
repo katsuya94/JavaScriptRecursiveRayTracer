@@ -21,11 +21,9 @@ function Light(position, ambient, diffuse, specular) {
 }
 
 function Hit(ray, origin, normal, material) {
-	this.d = vec3.create();
-	vec3.sub(this.d, ray.p, origin);
 	this.o = origin;
 	this.n = normal;
-	this.i = vec3.clone(ray.u);
+	this.i = ray.u;
 	this.mat = material;
 }
 
@@ -60,13 +58,12 @@ Tracer.prototype.light = function(light) {
 
 Tracer.prototype.propagate = function(pixel, hit, level) {
 	var shadow = vec3.create();
-	var reflection = vec3.create();
 
 	var ambient = vec3.create();
 	var diffuse = vec3.create();
 	var specular = vec3.create();
 
-	vec3.copy(reflection, hit.i);
+	var reflection = vec3.clone(hit.i);
 	vec3.scaleAndAdd(reflection, reflection, hit.n, -2 * vec3.dot(hit.n, hit.i));
 
 	var h = null;
@@ -74,7 +71,7 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 	if (level > 0) {
 		h = this.trace(new Ray(vec3.clone(hit.o), vec3.clone(reflection)), hit.id);
 
-		if (h) {
+		if (h !== null) {
 			this.propagate(specular, h, level - 1);
 		}
 	}
@@ -88,7 +85,7 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 		var d = vec3.len(shadow);
 		vec3.normalize(shadow, shadow);
 
-		if (!this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), vec3.len(shadow), hit.id)) {
+		if (!this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), d, hit.id)) {
 			vec3.scaleAndAdd(diffuse, diffuse, l.d, Math.max(0, vec3.dot(hit.n, shadow)));
 		}
 
@@ -106,69 +103,87 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 	vec3.add(pixel, pixel, specular);
 };
 
-Tracer.prototype.intersect = function(ray, entity) {
+Tracer.prototype.world_ray_to_model = function(ray, entity) {
 	var model_ray = new Ray(vec4.fromValues(ray.p[0], ray.p[1], ray.p[2], 1), vec4.fromValues(ray.u[0], ray.u[1], ray.u[2], 0));
 	vec4.transformMat4(model_ray.p, model_ray.p, entity.inverse_model);
 	vec4.transformMat4(model_ray.u, model_ray.u, entity.inverse_model);
-
-	return entity.hit(model_ray);
-};
+	return model_ray;
+}
 
 Tracer.prototype.blocks = function(ray, distance, exclude) {
 	for (var i = 0; i < this.entities.length; i++) {
 		if (i === exclude) continue;
 
 		var e = this.entities[i];
-		var h = this.intersect(ray, e);
+		var m_ray = this.world_ray_to_model(ray, e);
+		var t = e.col(m_ray);
 
-		if (h) {
-			h.id = i;
-
-			h.d = vec4.fromValues(h.d[0], h.d[1], h.d[2], 0);
-			vec4.transformMat4(h.d, h.d, e.model);
-
-			if (vec3.len(h.d) < distance) return true;
+		if (t !== null) {
+			var disp = vec4.fromValues(t * ray.u[0], t * ray.u[1], t * ray.u[2], 0);
+			vec4.transformMat4(disp, disp, e.inverse_transpose_model);
+			var dist = vec3.len(disp);
+			if (dist < distance)
+				return true;
 		}
 	}
 	return false;
 };
 
 Tracer.prototype.trace = function(ray, exclude) {
-	var close = null;
+	var dist = null;
+	var disp = null;
+	var m_ray = null;
+	var t = null;
+	var id = null;
 
 	for (var i = 0; i < this.entities.length; i++) {
 		if (i === exclude) continue;
 
-		var e = this.entities[i];
-		var h = this.intersect(ray, e);
+		var _e = this.entities[i];
+		var _m_ray = this.world_ray_to_model(ray, _e);
+		var _t = _e.col(_m_ray);
 
-		if (h) {
-			h.id = i;
+		if (_t !== null ) {
+			var _disp = vec4.fromValues(_t * _m_ray.u[0], _t * _m_ray.u[1], _t * _m_ray.u[2], 0);
+			vec4.transformMat4(_disp, _disp, _e.model);
+			var _dist = vec3.len(_disp);
 
-			h.o = vec4.fromValues(h.o[0], h.o[1], h.o[2], 1);
-			vec4.transformMat4(h.o, h.o, e.model);
-
-			h.n = vec4.fromValues(h.n[0], h.n[1], h.n[2], 0);
-			vec4.transformMat4(h.n, h.n, e.inverse_transpose_model);
-			vec3.normalize(h.n, h.n);
-
-			h.i = vec4.fromValues(h.i[0], h.i[1], h.i[2], 0);
-			vec4.transformMat4(h.i, h.i, e.model);
-
-			h.d = vec4.fromValues(h.d[0], h.d[1], h.d[2], 0);
-			vec4.transformMat4(h.d, h.d, e.model);
-
-			if (close) {
-				if (vec3.len(h.d) < vec3.len(close.d)) {
-					close = h;
-				}
-			} else {
-				close = h
-			}
+			if (dist === null || _dist < dist) {
+				dist = _dist;
+				disp = _disp;
+				m_ray = _m_ray;
+				t = _t;
+				id = i;
+			} 
 		}
 	}
 
-	return close;
+	if (id !== null) {
+		var e = this.entities[id];
+
+		var origin = vec3.fromValues(m_ray.p[0] + m_ray.u[0] * t, m_ray.p[1] + m_ray.u[1] * t, m_ray.p[2] + m_ray.u[2] * t)
+		try {
+			h = e.hit(m_ray, origin);
+		} catch (e) {
+			console.log(id);
+		}
+
+		h.o = vec4.fromValues(h.o[0], h.o[1], h.o[2], 1);
+		vec4.transformMat4(h.o, h.o, e.model);
+
+		h.n = vec4.fromValues(h.n[0], h.n[1], h.n[2], 0);
+		vec4.transformMat4(h.n, h.n, e.inverse_transpose_model);
+		vec3.normalize(h.n, h.n);
+
+		h.i = vec4.fromValues(h.i[0], h.i[1], h.i[2], 0);
+		vec4.transformMat4(h.i, h.i, e.model);
+
+		h.id = id;
+
+		return h;
+	}
+
+	return null;
 };
 
 Tracer.prototype.calculate = function(pixel, ray) {
