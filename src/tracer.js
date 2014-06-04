@@ -205,6 +205,7 @@ Tracer.prototype.sample = function(pixel, x, y) {
 }
 
 Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) {
+	aa = parseInt(aa);
 	var pixel = vec3.create();
 	var image = new Uint8Array(big_width * big_height * 3);
 	for (var j = 0; j < height; j++) {
@@ -218,7 +219,11 @@ Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) 
 			var x = 2 * i / width - 1 + 1 / width;
 			var y = 2 * j / height - 1 + 1 / height;
 
-			if (aa) {
+			switch (aa) {
+			case 0:
+				this.sample(pixel, x, y, camera);
+				break;
+			case 1:
 				this.sample(pixel, x + Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
 				this.sample(pixel, x + Math.random() * (1 / width), y - Math.random() * (1 / height), camera);
 				this.sample(pixel, x - Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
@@ -227,17 +232,50 @@ Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) 
 				pixel[0] /= 4;
 				pixel[1] /= 4;
 				pixel[2] /= 4;
+				break;
+			case 2:
+				var cx, cy;
 
-				image[offset + 0] = Math.min(pixel[0] * 256, 255);
-				image[offset + 1] = Math.min(pixel[1] * 256, 255);
-				image[offset + 2] = Math.min(pixel[2] * 256, 255);
-			} else {
-				this.sample(pixel, x, y, camera);
+				cx = x + (0.5 / width);
+				cy = y + (0.5 / width);
 
-				image[offset + 0] = Math.min(pixel[0] * 256, 255);
-				image[offset + 1] = Math.min(pixel[1] * 256, 255);
-				image[offset + 2] = Math.min(pixel[2] * 256, 255);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx - Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+
+				cx = x + (0.5 / width);
+				cy = y - (0.5 / width);
+
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx - Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+
+				cx = x - (0.5 / width);
+				cy = y + (0.5 / width);
+
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx - Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+
+				cx = x - (0.5 / width);
+				cy = y - (0.5 / width);
+
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx - Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+
+				pixel[0] /= 16;
+				pixel[1] /= 16;
+				pixel[2] /= 16;
+				break;
 			}
+			image[offset + 0] = Math.min(pixel[0] * 256, 255);
+			image[offset + 1] = Math.min(pixel[1] * 256, 255);
+			image[offset + 2] = Math.min(pixel[2] * 256, 255);
 		}
 	}
 	return image;

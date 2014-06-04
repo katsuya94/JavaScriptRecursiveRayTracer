@@ -8483,12 +8483,41 @@ function geometry(buffers, tracer) {
 		ctx.drawImage(tex, 0, 0);
 		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
 		sample = function(x, y) {
-			x = ~~(x * tex.width);
-			y = ~~(y * tex.height);
+			var u = x * tex.width - 0.5;
+			var v = y * tex.height - 0.5;
+			x = ~~u;
+			y = ~~v;
+			var dx = u - x;
+			var dy = v - y;
+			
+			var ll = vec3.fromValues(
+				data[tex.width * 4 * (y) + (x) * 4],
+				data[tex.width * 4 * (y) + (x) * 4 + 1],
+				data[tex.width * 4 * (y) + (x) * 4 + 2]);
+			var lr = vec3.fromValues(
+				data[tex.width * 4 * (y) + (x + 1) * 4],
+				data[tex.width * 4 * (y) + (x + 1) * 4 + 1],
+				data[tex.width * 4 * (y) + (x + 1) * 4 + 2]);
+			var ul = vec3.fromValues(
+				data[tex.width * 4 * (y) + (x) * 4],
+				data[tex.width * 4 * (y) + (x) * 4 + 1],
+				data[tex.width * 4 * (y) + (x) * 4 + 2]);
+			var ur = vec3.fromValues(
+				data[tex.width * 4 * (y + 1) + (x + 1) * 4],
+				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 1],
+				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 2]);
+			var l = vec3.fromValues(
+				(1 - dx) * ll[0] + dx * lr[0],
+				(1 - dx) * ll[1] + dx * lr[1],
+				(1 - dx) * ll[2] + dx * lr[2]);
+			var u = vec3.fromValues(
+				(1 - dx) * ul[0] + dx * ur[0],
+				(1 - dx) * ul[1] + dx * ur[1],
+				(1 - dx) * ul[2] + dx * ur[2]);
 			return vec3.fromValues(
-				data[tex.width * 4 * y + x * 4] / 256,
-				data[tex.width * 4 * y + x * 4 + 1] / 256,
-				data[tex.width * 4 * y + x * 4 + 2] / 256);
+				((1 - dy) * l[0] + dy * u[0]) / 256,
+				((1 - dy) * l[1] + dy * u[1]) / 256,
+				((1 - dy) * l[2] + dy * u[2]) / 256);
 		}
 	}, false);
 	tex.src = 'normal.jpg';
@@ -8610,7 +8639,7 @@ function main() {
 
 	// dat.GUI
 	var panel = {
-		AntiAliasing: false,
+		AntiAliasing: 0,
 		Detail: -1,
 		Recursion: 0,
 		Code: '',
@@ -8627,7 +8656,7 @@ function main() {
 	};
 	var gui = new dat.GUI();
 	var config = gui.addFolder('Config');
-	config.add(panel, 'AntiAliasing');
+	config.add(panel, 'AntiAliasing', { None: 0, Jitter4X: 1, Jitter16X: 2});
 	config.add(panel, 'Detail', -8, 0).step(1);
 	config.add(panel, 'Recursion', 0, 5).step(1);
 	config.add(panel, 'Code').listen();
@@ -8664,7 +8693,7 @@ function main() {
 		}
 
 		if (panel.Toggle) {
-			panel.Code = tracer.snap(false, panel.ContinuousDetail, 0);
+			panel.Code = tracer.snap(0, panel.ContinuousDetail, 0);
 		}
 
 		gl.useProgram(program_image);
@@ -9002,6 +9031,7 @@ Tracer.prototype.sample = function(pixel, x, y) {
 }
 
 Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) {
+	aa = parseInt(aa);
 	var pixel = vec3.create();
 	var image = new Uint8Array(big_width * big_height * 3);
 	for (var j = 0; j < height; j++) {
@@ -9015,7 +9045,11 @@ Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) 
 			var x = 2 * i / width - 1 + 1 / width;
 			var y = 2 * j / height - 1 + 1 / height;
 
-			if (aa) {
+			switch (aa) {
+			case 0:
+				this.sample(pixel, x, y, camera);
+				break;
+			case 1:
 				this.sample(pixel, x + Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
 				this.sample(pixel, x + Math.random() * (1 / width), y - Math.random() * (1 / height), camera);
 				this.sample(pixel, x - Math.random() * (1 / width), y + Math.random() * (1 / height), camera);
@@ -9024,17 +9058,50 @@ Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) 
 				pixel[0] /= 4;
 				pixel[1] /= 4;
 				pixel[2] /= 4;
+				break;
+			case 2:
+				var cx, cy;
 
-				image[offset + 0] = Math.min(pixel[0] * 256, 255);
-				image[offset + 1] = Math.min(pixel[1] * 256, 255);
-				image[offset + 2] = Math.min(pixel[2] * 256, 255);
-			} else {
-				this.sample(pixel, x, y, camera);
+				cx = x + (0.5 / width);
+				cy = y + (0.5 / width);
 
-				image[offset + 0] = Math.min(pixel[0] * 256, 255);
-				image[offset + 1] = Math.min(pixel[1] * 256, 255);
-				image[offset + 2] = Math.min(pixel[2] * 256, 255);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx - Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+
+				cx = x + (0.5 / width);
+				cy = y - (0.5 / width);
+
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx - Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+
+				cx = x - (0.5 / width);
+				cy = y + (0.5 / width);
+
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx - Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+
+				cx = x - (0.5 / width);
+				cy = y - (0.5 / width);
+
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx - Math.random() * (0.5 / width), cy + Math.random() * (0.5 / height), camera);
+				this.sample(pixel, cx + Math.random() * (0.5 / width), cy - Math.random() * (0.5 / height), camera);
+
+				pixel[0] /= 16;
+				pixel[1] /= 16;
+				pixel[2] /= 16;
+				break;
 			}
+			image[offset + 0] = Math.min(pixel[0] * 256, 255);
+			image[offset + 1] = Math.min(pixel[1] * 256, 255);
+			image[offset + 2] = Math.min(pixel[2] * 256, 255);
 		}
 	}
 	return image;

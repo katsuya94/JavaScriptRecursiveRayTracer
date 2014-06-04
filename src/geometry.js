@@ -103,12 +103,41 @@ function geometry(buffers, tracer) {
 		ctx.drawImage(tex, 0, 0);
 		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
 		sample = function(x, y) {
-			x = ~~(x * tex.width);
-			y = ~~(y * tex.height);
+			var u = x * tex.width - 0.5;
+			var v = y * tex.height - 0.5;
+			x = ~~u;
+			y = ~~v;
+			var dx = u - x;
+			var dy = v - y;
+			
+			var ll = vec3.fromValues(
+				data[tex.width * 4 * (y) + (x) * 4],
+				data[tex.width * 4 * (y) + (x) * 4 + 1],
+				data[tex.width * 4 * (y) + (x) * 4 + 2]);
+			var lr = vec3.fromValues(
+				data[tex.width * 4 * (y) + (x + 1) * 4],
+				data[tex.width * 4 * (y) + (x + 1) * 4 + 1],
+				data[tex.width * 4 * (y) + (x + 1) * 4 + 2]);
+			var ul = vec3.fromValues(
+				data[tex.width * 4 * (y) + (x) * 4],
+				data[tex.width * 4 * (y) + (x) * 4 + 1],
+				data[tex.width * 4 * (y) + (x) * 4 + 2]);
+			var ur = vec3.fromValues(
+				data[tex.width * 4 * (y + 1) + (x + 1) * 4],
+				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 1],
+				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 2]);
+			var l = vec3.fromValues(
+				(1 - dx) * ll[0] + dx * lr[0],
+				(1 - dx) * ll[1] + dx * lr[1],
+				(1 - dx) * ll[2] + dx * lr[2]);
+			var u = vec3.fromValues(
+				(1 - dx) * ul[0] + dx * ur[0],
+				(1 - dx) * ul[1] + dx * ur[1],
+				(1 - dx) * ul[2] + dx * ur[2]);
 			return vec3.fromValues(
-				data[tex.width * 4 * y + x * 4] / 256,
-				data[tex.width * 4 * y + x * 4 + 1] / 256,
-				data[tex.width * 4 * y + x * 4 + 2] / 256);
+				((1 - dy) * l[0] + dy * u[0]) / 256,
+				((1 - dy) * l[1] + dy * u[1]) / 256,
+				((1 - dy) * l[2] + dy * u[2]) / 256);
 		}
 	}, false);
 	tex.src = 'normal.jpg';

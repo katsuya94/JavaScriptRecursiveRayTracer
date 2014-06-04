@@ -33,7 +33,7 @@ function main() {
 
 	// dat.GUI
 	var panel = {
-		AntiAliasing: false,
+		AntiAliasing: 0,
 		Detail: -1,
 		Recursion: 0,
 		Code: '',
@@ -50,7 +50,7 @@ function main() {
 	};
 	var gui = new dat.GUI();
 	var config = gui.addFolder('Config');
-	config.add(panel, 'AntiAliasing');
+	config.add(panel, 'AntiAliasing', { None: 0, Jitter4X: 1, Jitter16X: 2});
 	config.add(panel, 'Detail', -8, 0).step(1);
 	config.add(panel, 'Recursion', 0, 5).step(1);
 	config.add(panel, 'Code').listen();
@@ -87,7 +87,7 @@ function main() {
 		}
 
 		if (panel.Toggle) {
-			panel.Code = tracer.snap(false, panel.ContinuousDetail, 0);
+			panel.Code = tracer.snap(0, panel.ContinuousDetail, 0);
 		}
 
 		gl.useProgram(program_image);
