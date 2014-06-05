@@ -18,6 +18,7 @@ function Light(position, ambient, diffuse, specular) {
 	this.a = ambient;
 	this.d = diffuse;
 	this.s = specular;
+	this.on = true;
 }
 
 function Hit(ray, origin, normal, material) {
@@ -78,6 +79,7 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 
 	for (var i = 0; i < this.lights.length; i++) {
 		var l = this.lights[i];
+		if (!l.on) continue;
 
 		vec3.add(ambient, ambient, l.a);
 
@@ -87,11 +89,9 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 
 		var lambertian = vec3.dot(hit.n, shadow);
 
-		if (lambertian > 0) {
-			if (!this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), d, hit.id)) {
-				vec3.scaleAndAdd(diffuse, diffuse, l.d, lambertian);
-				vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
-			}
+		if (lambertian > 0 && !this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), d, hit.id)) {
+			vec3.scaleAndAdd(diffuse, diffuse, l.d, lambertian);
+			vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
 		}
 	}
 

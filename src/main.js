@@ -17,7 +17,7 @@ function main() {
 	gl.useProgram(program_static);
 	var buffers	= new Buffers(program_static);
 	gl.useProgram(program_image);
-	var tracer	= new Tracer(program_image);
+	var tracer = new Tracer(program_image);
 
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
@@ -26,38 +26,90 @@ function main() {
 	camera = init_camera();
 
 	// Geometry
-	geometry(buffers, tracer);
+	scene_b(buffers, tracer);
 	buffers.populate();
 
 	var flag = true;
 
 	// dat.GUI
 	var panel = {
+		LoadSceneA: function() {
+			buffers.draws = [];
+			buffers.vertices = [];
+			buffers.indices = [];
+			tracer.entities = [];
+			tracer.lights = [];
+			scene_a(buffers, tracer);
+			buffers.populate();
+		},
+		LoadSceneB: function() {
+			buffers.draws = [];
+			buffers.vertices = [];
+			buffers.indices = [];
+			tracer.entities = [];
+			tracer.lights = [];
+			scene_b(buffers, tracer);
+			buffers.populate();
+		},
+
 		AntiAliasing: 0,
 		Detail: -1,
 		Recursion: 0,
+
 		Code: '',
 		UseCode: function() {
 			var array = this.Code.split(',').map(Number.parseFloat);
 			quat.set(camera.rotate, array[0], array[1], array[2], array[3]);
 			vec3.set(camera.position, array[4], array[5], array[6]);
 		},
-		Toggle: false,
-		ContinuousDetail: -4,
+
+		ID: '',
+		X: '',
+		Y: '',
+		Z: '',
+		On: true,
+		Get: function() {
+			var l = tracer.lights[parseInt(panel.ID)];
+			if (l) {
+				panel.X = l.o[0].toString();
+				panel.Y = l.o[1].toString();
+				panel.Z = l.o[2].toString();
+				panel.On = l.on;
+			}
+		},
+		Update: function() {
+			var l = tracer.lights[parseInt(panel.ID)];
+			if (l) {
+				l.o[0] = parseFloat(panel.X);
+				l.o[1] = parseFloat(panel.Y);
+				l.o[2] = parseFloat(panel.Z);
+				l.on = panel.On;
+			}
+		},
+
 		Snap: function() {
 			flag = true;
 		},
 	};
 	var gui = new dat.GUI();
+	var scenes = gui.addFolder('Scenes');
+	scenes.add(panel, 'LoadSceneA');
+	scenes.add(panel, 'LoadSceneB');
 	var config = gui.addFolder('Config');
 	config.add(panel, 'AntiAliasing', { None: 0, Jitter4X: 1, Jitter16X: 2});
 	config.add(panel, 'Detail', -8, 0).step(1);
 	config.add(panel, 'Recursion', 0, 5).step(1);
-	config.add(panel, 'Code').listen();
-	config.add(panel, 'UseCode');
-	var continuous = gui.addFolder('Continuous');
-	continuous.add(panel, 'Toggle');
-	continuous.add(panel, 'ContinuousDetail', -8, 0).step(1);
+	var cam = gui.addFolder('Camera')
+	cam.add(panel, 'Code').listen();
+	cam.add(panel, 'UseCode');
+	var lighting = gui.addFolder('Lighting');
+	lighting.add(panel, 'ID');
+	lighting.add(panel, 'X').listen();
+	lighting.add(panel, 'Y').listen();
+	lighting.add(panel, 'Z').listen();
+	lighting.add(panel, 'On').listen();
+	lighting.add(panel, 'Get');
+	lighting.add(panel, 'Update');
 	gui.add(panel, 'Snap');
 
 	gl.useProgram(program_static);
@@ -84,10 +136,6 @@ function main() {
 		if (flag) {
 			flag = false;
 			panel.Code = tracer.snap(panel.AntiAliasing, panel.Detail, panel.Recursion);
-		}
-
-		if (panel.Toggle) {
-			panel.Code = tracer.snap(0, panel.ContinuousDetail, 0);
 		}
 
 		gl.useProgram(program_image);

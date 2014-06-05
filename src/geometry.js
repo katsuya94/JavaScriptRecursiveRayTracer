@@ -1,4 +1,4 @@
-function geometry(buffers, tracer) {
+function scene_a(buffers, tracer) {
 	var axes = new Entity([
 		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
 		0.0, 1.0, 0.0, 1.0, 0.0, 0.0,
@@ -91,7 +91,45 @@ function geometry(buffers, tracer) {
 	var sphere_e = new Entity(undefined, undefined, transform, sphere, metal);
 	tracer.register(sphere_e);
 
-	// Cylinders
+	tracer.light(new Light(
+		vec3.fromValues(20.0, 0.0, 20.0),
+		vec3.fromValues(0.5, 0.4, 0.3),
+		vec3.fromValues(0.5, 0.4, 0.3),
+		vec3.fromValues(0.5, 0.4, 0.3)));
+
+	tracer.light(new Light(
+		vec3.fromValues(-20.0, 0.0, 20.0),
+		vec3.fromValues(0.3, 0.4, 0.5),
+		vec3.fromValues(0.3, 0.4, 0.5),
+		vec3.fromValues(0.3, 0.4, 0.5)));
+}
+
+function scene_b(buffers, tracer) {
+	var axes = new Entity([
+		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
+
+		0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+		1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+		0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+
+		0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+		0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
+		1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+	], undefined, mat4.create(), undefined);
+	buffers.arrayDraw(axes, 'TRIANGLES');
+
+	var floor = new Entity(grid(), undefined, mat4.create(), function(ray) {
+		var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
+		return t > 0 ? { t: t } : null;
+	}, function(ray, col) {
+		var origin = param_ray(ray, col.t);
+		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
+		return new Hit(ray, origin, Z, m)
+	});
+	buffers.arrayDraw(floor, 'LINES');
+	tracer.register(floor);
 
 	// Cube
 	var sample = function() { return vec3.fromValues(1.0, 0.0, 1.0); };
@@ -103,31 +141,33 @@ function geometry(buffers, tracer) {
 		ctx.drawImage(tex, 0, 0);
 		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
 		sample = function(x, y) {
-			var u = x * (tex.width - 1);
-			var v = y * (tex.height - 1);
+			var u = x * tex.width;
+			var v = y * tex.height;
 			x = ~~u;
 			y = ~~v;
+			_x = (x + 1) % tex.width;
+			_y = (y + 1) % tex.height;
 			var dx = u - x;
 			var _dx = 1 - dx
 			var dy = v - y;
 			var _dy = 1 - dy;
 			
 			var ul = vec3.fromValues(
-				data[tex.width * 4 * (y) + (x) * 4],
-				data[tex.width * 4 * (y) + (x) * 4 + 1],
-				data[tex.width * 4 * (y) + (x) * 4 + 2]);
+				data[tex.width * 4 * y + x * 4],
+				data[tex.width * 4 * y + x * 4 + 1],
+				data[tex.width * 4 * y + x * 4 + 2]);
 			var ur = vec3.fromValues(
-				data[tex.width * 4 * (y) + (x + 1) * 4],
-				data[tex.width * 4 * (y) + (x + 1) * 4 + 1],
-				data[tex.width * 4 * (y) + (x + 1) * 4 + 2]);
+				data[tex.width * 4 * y + _x * 4],
+				data[tex.width * 4 * y + _x * 4 + 1],
+				data[tex.width * 4 * y + _x * 4 + 2]);
 			var ll = vec3.fromValues(
-				data[tex.width * 4 * (y + 1) + (x) * 4],
-				data[tex.width * 4 * (y + 1) + (x) * 4 + 1],
-				data[tex.width * 4 * (y + 1) + (x) * 4 + 2]);
+				data[tex.width * 4 * _y + x * 4],
+				data[tex.width * 4 * _y + x * 4 + 1],
+				data[tex.width * 4 * _y + x * 4 + 2]);
 			var lr = vec3.fromValues(
-				data[tex.width * 4 * (y + 1) + (x + 1) * 4],
-				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 1],
-				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 2]);
+				data[tex.width * 4 * _y + _x * 4],
+				data[tex.width * 4 * _y + _x * 4 + 1],
+				data[tex.width * 4 * _y + _x * 4 + 2]);
 			var l = vec3.fromValues(
 				_dx * ll[0] + dx * lr[0],
 				_dx * ll[1] + dx * lr[1],
@@ -144,7 +184,7 @@ function geometry(buffers, tracer) {
 	}, false);
 	tex.src = 'normal.jpg';
 
-	function side(ray, n, u, v, a, b) {
+	function bump_side(ray, n, u, v, a, b) {
 		var d = vec3.dot(ray.u, n);
 		if (d < 0) {
 			var t = -(vec3.dot(ray.p, n) - 1) / d;
@@ -158,26 +198,26 @@ function geometry(buffers, tracer) {
 		return null;
 	};
 
-	function cube(ray) {
+	function bump_cube(ray) {
 		var h;
 
-		h = side(ray, X, Y, Z, 1, 2);
+		h = bump_side(ray, X, Y, Z, 1, 2);
 		if (h) return h;
-		h = side(ray, _X, _Y, _Z, 1, 2);
+		h = bump_side(ray, _X, _Y, _Z, 1, 2);
 		if (h) return h;
-		h = side(ray, Y, Z, X, 0, 2);
+		h = bump_side(ray, Y, Z, X, 0, 2);
 		if (h) return h;
-		h = side(ray, _Y, _Z, _X, 0, 2);
+		h = bump_side(ray, _Y, _Z, _X, 0, 2);
 		if (h) return h;
-		h = side(ray, Z, X, Y, 0, 1);
+		h = bump_side(ray, Z, X, Y, 0, 1);
 		if (h) return h;
-		h = side(ray, _Z, _X, _Y, 0, 1);
+		h = bump_side(ray, _Z, _X, _Y, 0, 1);
 		if (h) return h;
 		
 		return null;
 	};
 
-	function cube_hit(ray, col) {
+	function bump_hit(ray, col) {
 		var normal = vec3.clone(col.normal);
 		var s = sample(col.origin[col.a] / 2 + 0.5, col.origin[col.b] / 2 + 0.5);
 		vec3.scaleAndAdd(normal, normal, col.u, (s[0] - 0.5) * 2);
@@ -186,23 +226,121 @@ function geometry(buffers, tracer) {
 		return new Hit(ray, col.origin, normal, PEWTER)
 	}
 
-	transform = mat4.create();
-	mat4.translate(transform, transform, [5, 5, 2 * Math.sqrt(2) * Math.sqrt(2)]);
+	var transform = mat4.create();
+	mat4.translate(transform, transform, [0, 0, 2]);
 	mat4.scale(transform, transform, [2, 2, 2]);
-	mat4.rotate(transform, transform, Math.PI / 4, [-1, 1, 0]);
 
-	var cube_a = new Entity(undefined, undefined, transform, cube, cube_hit);
+	var cube_a = new Entity(undefined, undefined, transform, bump_cube, bump_hit);
 	tracer.register(cube_a);
 
-	tracer.light(new Light(
-		vec3.fromValues(20.0, 0.0, 20.0),
-		vec3.fromValues(0.5, 0.4, 0.3),
-		vec3.fromValues(0.5, 0.4, 0.3),
-		vec3.fromValues(0.5, 0.4, 0.3)));
+	function side(ray, n, a, b) {
+		var d = vec3.dot(ray.u, n);
+		if (d < 0) {
+			var t = -(vec3.dot(ray.p, n) - 1) / d;
+			if (t > 0) {
+				var origin = param_ray(ray, t);
+				if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
+					return { t: t, normal: n }
+				}
+			}
+		}
+		return null;
+	};
+
+	function cube(ray) {
+		var h;
+
+		h = side(ray, X, 1, 2);
+		if (h) return h;
+		h = side(ray, _X, 1, 2);
+		if (h) return h;
+		h = side(ray, Y, 2, 0);
+		if (h) return h;
+		h = side(ray, _Y, 2, 0);
+		if (h) return h;
+		h = side(ray, Z, 0, 1);
+		if (h) return h;
+		h = side(ray, _Z, 0, 1);
+		if (h) return h;
+		
+		return null;
+	};
+
+	function red_hit(ray, col) {
+		var origin = param_ray(ray, col.t);
+		return new Hit(ray, origin, col.normal, RED_PLASTIC);
+	}
+
+	function cyan_hit(ray, col) {
+		var origin = param_ray(ray, col.t);
+		return new Hit(ray, origin, col.normal, CYAN_PLASTIC);
+	}
+
+	function green_hit(ray, col) {
+		var origin = param_ray(ray, col.t);
+		return new Hit(ray, origin, col.normal, GREEN_PLASTIC);
+	}
+
+	function magenta_hit(ray, col) {
+		var origin = param_ray(ray, col.t);
+		return new Hit(ray, origin, col.normal, MAGENTA_PLASTIC);
+	}
+
+	transform = mat4.create();
+	mat4.translate(transform, transform, [0, 6, 8]);
+	mat4.scale(transform, transform, [2, 2, 2]);
+	mat4.rotateX(transform, transform, Math.PI / 4);
+
+	var cube_b = new Entity(undefined, undefined, transform, cube, red_hit);
+	tracer.register(cube_b);
+
+	transform = mat4.create();
+	mat4.translate(transform, transform, [0, -6, 8]);
+	mat4.scale(transform, transform, [2, 2, 2]);
+	mat4.rotateX(transform, transform, -Math.PI / 4);
+
+	var cube_c = new Entity(undefined, undefined, transform, cube, cyan_hit);
+	tracer.register(cube_c);
+
+	transform = mat4.create();
+	mat4.translate(transform, transform, [6, 0, 8]);
+	mat4.scale(transform, transform, [2, 2, 2]);
+	mat4.rotateY(transform, transform, Math.PI / 4);
+
+	var cube_d = new Entity(undefined, undefined, transform, cube, green_hit);
+	tracer.register(cube_d);
+
+	transform = mat4.create();
+	mat4.translate(transform, transform, [-6, 0, 8]);
+	mat4.scale(transform, transform, [2, 2, 2]);
+	mat4.rotateY(transform, transform, -Math.PI / 4);
+
+	var cube_e = new Entity(undefined, undefined, transform, cube, magenta_hit);
+	tracer.register(cube_e);
 
 	tracer.light(new Light(
-		vec3.fromValues(-20.0, 0.0, 20.0),
-		vec3.fromValues(0.3, 0.4, 0.5),
-		vec3.fromValues(0.3, 0.4, 0.5),
-		vec3.fromValues(0.3, 0.4, 0.5)));
+		vec3.fromValues(0.0, 0.0, 20.0),
+		vec3.fromValues(0.5, 0.5, 0.5),
+		vec3.fromValues(0.5, 0.5, 0.5),
+		vec3.fromValues(0.5, 0.5, 0.5)));
+	tracer.light(new Light(
+		vec3.fromValues(20.0, 20.0, 20.0),
+		vec3.fromValues(0.0, 0.0, 0.2),
+		vec3.fromValues(0.0, 0.0, 0.2),
+		vec3.fromValues(0.0, 0.0, 0.2)));
+	tracer.light(new Light(
+		vec3.fromValues(-20.0, 20.0, 20.0),
+		vec3.fromValues(0.0, 0.0, 0.2),
+		vec3.fromValues(0.0, 0.0, 0.2),
+		vec3.fromValues(0.0, 0.0, 0.2)));
+	tracer.light(new Light(
+		vec3.fromValues(20.0, -20.0, 20.0),
+		vec3.fromValues(0.0, 0.0, 0.2),
+		vec3.fromValues(0.0, 0.0, 0.2),
+		vec3.fromValues(0.0, 0.0, 0.2)));
+	tracer.light(new Light(
+		vec3.fromValues(-20.0, -20.0, 20.0),
+		vec3.fromValues(0.0, 0.0, 0.2),
+		vec3.fromValues(0.0, 0.0, 0.2),
+		vec3.fromValues(0.0, 0.0, 0.2)));
 }
