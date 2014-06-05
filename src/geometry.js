@@ -27,7 +27,7 @@ function geometry(buffers, tracer) {
 
 	// Spheres
 
-	function sphere(ray) {
+	var sphere = function(ray) {
 		var a = ray.u[0] * ray.u[0] + ray.u[1] * ray.u[1] + ray.u[2] * ray.u[2];
 		var b = 2 * (ray.p[0] * ray.u[0] + ray.p[1] * ray.u[1] + ray.p[2] * ray.u[2]);
 		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 1;
@@ -51,7 +51,7 @@ function geometry(buffers, tracer) {
 		return { t: t };
 	}
 
-	function metal(ray, col) {
+	var metal = function(ray, col) {
 		var origin = param_ray(ray, col.t);
 		return new Hit(ray, origin, origin, METAL);
 	}
@@ -103,48 +103,46 @@ function geometry(buffers, tracer) {
 		ctx.drawImage(tex, 0, 0);
 		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
 		sample = function(x, y) {
-			var u = x * (tex.width - 1);
-			var v = y * (tex.height - 1);
+			var u = x * tex.width - 0.5;
+			var v = y * tex.height - 0.5;
 			x = ~~u;
 			y = ~~v;
 			var dx = u - x;
-			var _dx = 1 - dx
 			var dy = v - y;
-			var _dy = 1 - dy;
 			
+			var ll = vec3.fromValues(
+				data[tex.width * 4 * (y) + (x) * 4],
+				data[tex.width * 4 * (y) + (x) * 4 + 1],
+				data[tex.width * 4 * (y) + (x) * 4 + 2]);
+			var lr = vec3.fromValues(
+				data[tex.width * 4 * (y) + (x + 1) * 4],
+				data[tex.width * 4 * (y) + (x + 1) * 4 + 1],
+				data[tex.width * 4 * (y) + (x + 1) * 4 + 2]);
 			var ul = vec3.fromValues(
 				data[tex.width * 4 * (y) + (x) * 4],
 				data[tex.width * 4 * (y) + (x) * 4 + 1],
 				data[tex.width * 4 * (y) + (x) * 4 + 2]);
 			var ur = vec3.fromValues(
-				data[tex.width * 4 * (y) + (x + 1) * 4],
-				data[tex.width * 4 * (y) + (x + 1) * 4 + 1],
-				data[tex.width * 4 * (y) + (x + 1) * 4 + 2]);
-			var ll = vec3.fromValues(
-				data[tex.width * 4 * (y + 1) + (x) * 4],
-				data[tex.width * 4 * (y + 1) + (x) * 4 + 1],
-				data[tex.width * 4 * (y + 1) + (x) * 4 + 2]);
-			var lr = vec3.fromValues(
 				data[tex.width * 4 * (y + 1) + (x + 1) * 4],
 				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 1],
 				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 2]);
 			var l = vec3.fromValues(
-				_dx * ll[0] + dx * lr[0],
-				_dx * ll[1] + dx * lr[1],
-				_dx * ll[2] + dx * lr[2]);
+				(1 - dx) * ll[0] + dx * lr[0],
+				(1 - dx) * ll[1] + dx * lr[1],
+				(1 - dx) * ll[2] + dx * lr[2]);
 			var u = vec3.fromValues(
-				_dx * ul[0] + dx * ur[0],
-				_dx * ul[1] + dx * ur[1],
-				_dx * ul[2] + dx * ur[2]);
+				(1 - dx) * ul[0] + dx * ur[0],
+				(1 - dx) * ul[1] + dx * ur[1],
+				(1 - dx) * ul[2] + dx * ur[2]);
 			return vec3.fromValues(
-				(dy * l[0] + _dy * u[0]) / 256,
-				(dy * l[1] + _dy * u[1]) / 256,
-				(dy * l[2] + _dy * u[2]) / 256);
+				((1 - dy) * l[0] + dy * u[0]) / 256,
+				((1 - dy) * l[1] + dy * u[1]) / 256,
+				((1 - dy) * l[2] + dy * u[2]) / 256);
 		}
 	}, false);
 	tex.src = 'normal.jpg';
 
-	function side(ray, n, u, v, a, b) {
+	var side = function(ray, n, u, v, a, b) {
 		var d = vec3.dot(ray.u, n);
 		if (d < 0) {
 			var t = -(vec3.dot(ray.p, n) - 1) / d;
@@ -158,7 +156,7 @@ function geometry(buffers, tracer) {
 		return null;
 	};
 
-	function cube(ray) {
+	var cube = function(ray) {
 		var h;
 
 		h = side(ray, X, Y, Z, 1, 2);
@@ -177,7 +175,7 @@ function geometry(buffers, tracer) {
 		return null;
 	};
 
-	function cube_hit(ray, col) {
+	var cube_hit = function(ray, col) {
 		var normal = vec3.clone(col.normal);
 		var s = sample(col.origin[col.a] / 2 + 0.5, col.origin[col.b] / 2 + 0.5);
 		vec3.scaleAndAdd(normal, normal, col.u, (s[0] - 0.5) * 2);
