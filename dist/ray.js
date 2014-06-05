@@ -8113,10 +8113,9 @@ function box(x, y, z) {
 /* exported init_buffers */
 
 function Buffers(program) {
-	this.a_position	= gl.getAttribLocation(program, 'a_position');
-	this.a_color	= gl.getAttribLocation(program, 'a_color');
+	this.a_position = gl.getAttribLocation(program, 'a_position');
 
-	this.u_mvp		= gl.getUniformLocation(program, 'u_mvp');
+	this.u_mvp = gl.getUniformLocation(program, 'u_mvp');
 
 	this.draws = [];
 
@@ -8177,7 +8176,6 @@ Buffers.prototype.populate = function() {
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
 
 	gl.enableVertexAttribArray(this.a_position);
-	gl.enableVertexAttribArray(this.a_color);
 
 	var indexBuffer = gl.createBuffer();
 
@@ -8349,7 +8347,7 @@ function init_camera() {
 
 var ASIZE = (new Float32Array()).BYTES_PER_ELEMENT;
 var ESIZE = (new Uint16Array()).BYTES_PER_ELEMENT;
-var VSIZE = 6;
+var VSIZE = 3;
 
 var FOV = Math.PI / 3;
 var T_2 = Math.tan(FOV / 2);;
@@ -8379,17 +8377,14 @@ function Entity(vertices, indices, model, col, hit) {
 // FILE SEPARATOR
 
 var axes = new Entity([
-	0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-	0.0, 1.0, 0.0, 1.0, 0.0, 0.0,
-	0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
+	0.0, 0.0, 0.0,
+	1.0, 0.0, 0.0,
 
-	0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-	1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-	0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+	0.0, 0.0, 0.0,
+	0.0, 1.0, 0.0,
 
-	0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-	0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
-	1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+	0.0, 0.0, 0.0,
+	0.0, 0.0, 1.0
 ], undefined, mat4.create(), undefined, undefined);
 
 function floor_hit(ray, col) {
@@ -8404,7 +8399,7 @@ function floor_col(ray) {
 }
 
 function scene_a(buffers, tracer) {
-	buffers.arrayDraw(axes, 'TRIANGLES');
+	buffers.arrayDraw(axes, 'LINES');
 
 	var floor = new Entity(grid(), undefined, mat4.create(), floor_col, floor_hit);
 	buffers.arrayDraw(floor, 'LINES');
@@ -8490,7 +8485,7 @@ function scene_a(buffers, tracer) {
 }
 
 function scene_b(buffers, tracer) {
-	buffers.arrayDraw(axes, 'TRIANGLES');
+	buffers.arrayDraw(axes, 'LINES');
 
 	var floor = new Entity(grid(), undefined, mat4.create(), floor_col, floor_hit);
 	buffers.arrayDraw(floor, 'LINES');
@@ -8720,10 +8715,10 @@ var GRID_INT = 1.0;
 function grid() {
 	var array = [];
 	for(var i = -GRID_NUM; i <= GRID_NUM; i++) {
-		array = array.concat([GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.5, 0.4, 0.5]);
-		array = array.concat([-GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.5, 0.4, 0.5]);
-		array = array.concat([GRID_INT * i, GRID_INT * GRID_NUM, 0.0, 0.4, 0.5, 0.5]);
-		array = array.concat([GRID_INT * i, -GRID_INT * GRID_NUM, 0.0, 0.4, 0.5, 0.5]);
+		array = array.concat([GRID_INT * GRID_NUM, GRID_INT * i, 0.0]);
+		array = array.concat([-GRID_INT * GRID_NUM, GRID_INT * i, 0.0]);
+		array = array.concat([GRID_INT * i, GRID_INT * GRID_NUM, 0.0]);
+		array = array.concat([GRID_INT * i, -GRID_INT * GRID_NUM, 0.0]);
 	}
 	return array;
 };
@@ -8858,8 +8853,7 @@ function main() {
 		gl.viewport(0, 0, gl.drawingBufferWidth/2, gl.drawingBufferHeight);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex)
-		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 6 * ASIZE, 0 * ASIZE);
-		gl.vertexAttribPointer(buffers.a_color, 3, gl.FLOAT, false, 6 * ASIZE, 3 * ASIZE);
+		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 3 * ASIZE, 0 * ASIZE);
 
 		camera.update(dt);
 		buffers.draw(camera);
@@ -8995,10 +8989,6 @@ function sphere(offset, x, y, z) {
 			positions.push(2 * si * sj + x);
 			positions.push(2 * cj + y);
 			positions.push(2 * ci * sj + z);
-			// Colors
-			positions.push(ci * sj * 0.25 + 0.5);
-			positions.push(ci * sj * 0.25 + 0.5);
-			positions.push(ci * sj * 0.25 + 0.5);
 		}
 	}
 
@@ -9071,6 +9061,7 @@ function Tracer(program) {
 	this.buffer_rectangle = gl.createBuffer();
 
 	gl.enableVertexAttribArray(this.a_rectangle);
+	gl.enableVertexAttribArray(this.a_texcoord);
 
 	this.entities = [];
 	this.lights = [];

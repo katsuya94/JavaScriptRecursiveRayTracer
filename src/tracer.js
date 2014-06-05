@@ -44,6 +44,7 @@ function Tracer(program) {
 	this.buffer_rectangle = gl.createBuffer();
 
 	gl.enableVertexAttribArray(this.a_rectangle);
+	gl.enableVertexAttribArray(this.a_texcoord);
 
 	this.entities = [];
 	this.lights = [];

@@ -127,8 +127,7 @@ function main() {
 		gl.viewport(0, 0, gl.drawingBufferWidth/2, gl.drawingBufferHeight);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex)
-		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 6 * ASIZE, 0 * ASIZE);
-		gl.vertexAttribPointer(buffers.a_color, 3, gl.FLOAT, false, 6 * ASIZE, 3 * ASIZE);
+		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 3 * ASIZE, 0 * ASIZE);
 
 		camera.update(dt);
 		buffers.draw(camera);

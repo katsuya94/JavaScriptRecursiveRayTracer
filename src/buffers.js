@@ -5,10 +5,9 @@
 /* exported init_buffers */
 
 function Buffers(program) {
-	this.a_position	= gl.getAttribLocation(program, 'a_position');
-	this.a_color	= gl.getAttribLocation(program, 'a_color');
+	this.a_position = gl.getAttribLocation(program, 'a_position');
 
-	this.u_mvp		= gl.getUniformLocation(program, 'u_mvp');
+	this.u_mvp = gl.getUniformLocation(program, 'u_mvp');
 
 	this.draws = [];
 
@@ -69,7 +68,6 @@ Buffers.prototype.populate = function() {
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
 
 	gl.enableVertexAttribArray(this.a_position);
-	gl.enableVertexAttribArray(this.a_color);
 
 	var indexBuffer = gl.createBuffer();
 

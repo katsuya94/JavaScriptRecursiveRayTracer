@@ -1,15 +1,12 @@
 var axes = new Entity([
-	0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-	0.0, 1.0, 0.0, 1.0, 0.0, 0.0,
-	0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
+	0.0, 0.0, 0.0,
+	1.0, 0.0, 0.0,
 
-	0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-	1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-	0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+	0.0, 0.0, 0.0,
+	0.0, 1.0, 0.0,
 
-	0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-	0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
-	1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+	0.0, 0.0, 0.0,
+	0.0, 0.0, 1.0
 ], undefined, mat4.create(), undefined, undefined);
 
 function floor_hit(ray, col) {
@@ -24,7 +21,7 @@ function floor_col(ray) {
 }
 
 function scene_a(buffers, tracer) {
-	buffers.arrayDraw(axes, 'TRIANGLES');
+	buffers.arrayDraw(axes, 'LINES');
 
 	var floor = new Entity(grid(), undefined, mat4.create(), floor_col, floor_hit);
 	buffers.arrayDraw(floor, 'LINES');
@@ -110,7 +107,7 @@ function scene_a(buffers, tracer) {
 }
 
 function scene_b(buffers, tracer) {
-	buffers.arrayDraw(axes, 'TRIANGLES');
+	buffers.arrayDraw(axes, 'LINES');
 
 	var floor = new Entity(grid(), undefined, mat4.create(), floor_col, floor_hit);
 	buffers.arrayDraw(floor, 'LINES');

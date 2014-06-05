@@ -26,10 +26,6 @@ function sphere(offset, x, y, z) {
 			positions.push(2 * si * sj + x);
 			positions.push(2 * cj + y);
 			positions.push(2 * ci * sj + z);
-			// Colors
-			positions.push(ci * sj * 0.25 + 0.5);
-			positions.push(ci * sj * 0.25 + 0.5);
-			positions.push(ci * sj * 0.25 + 0.5);
 		}
 	}
 
