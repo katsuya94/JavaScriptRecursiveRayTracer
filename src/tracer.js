@@ -105,11 +105,13 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 };
 
 Tracer.prototype.blocks = function(ray, distance, exclude) {
+	var m_ray = new Ray(vec3.create(), vec3.create());
+
 	for (var i = 0; i < this.entities.length; i++) {
 		if (i === exclude) continue;
 
 		var e = this.entities[i];
-		var m_ray = world_ray_to_model(ray, e);
+		world_ray_to_model(m_ray, ray, e);
 		var col = e.col(m_ray);
 
 		if (col !== null) {
@@ -124,6 +126,9 @@ Tracer.prototype.blocks = function(ray, distance, exclude) {
 };
 
 Tracer.prototype.trace = function(ray, exclude) {
+	var _m_ray = new Ray(vec3.create(), vec3.create());
+	var _disp = vec4.create();
+
 	var dist = null;
 	var disp = null;
 	var m_ray = null;
@@ -134,18 +139,18 @@ Tracer.prototype.trace = function(ray, exclude) {
 		if (i === exclude) continue;
 
 		var _e = this.entities[i];
-		var _m_ray = world_ray_to_model(ray, _e);
+		world_ray_to_model(_m_ray, ray, _e);
 		var _col = _e.col(_m_ray);
 
 		if (_col !== null ) {
-			var _disp = vec4.fromValues(_col.t * _m_ray.u[0], _col.t * _m_ray.u[1], _col.t * _m_ray.u[2], 0);
+			vec4.set(_disp, _col.t * _m_ray.u[0], _col.t * _m_ray.u[1], _col.t * _m_ray.u[2], 0);
 			vec4.transformMat4(_disp, _disp, _e.model);
 			var _dist = vec3.len(_disp);
 
 			if (dist === null || _dist < dist) {
 				dist = _dist;
-				disp = _disp;
-				m_ray = _m_ray;
+				disp = vec4.clone(_disp);
+				m_ray = new Ray(vec3.clone(_m_ray.p), vec3.clone(_m_ray.u));
 				col = _col;
 				id = i;
 			} 

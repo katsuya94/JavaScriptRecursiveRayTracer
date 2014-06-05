@@ -8933,11 +8933,13 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 };
 
 Tracer.prototype.blocks = function(ray, distance, exclude) {
+	var m_ray = new Ray(vec3.create(), vec3.create());
+
 	for (var i = 0; i < this.entities.length; i++) {
 		if (i === exclude) continue;
 
 		var e = this.entities[i];
-		var m_ray = world_ray_to_model(ray, e);
+		world_ray_to_model(m_ray, ray, e);
 		var col = e.col(m_ray);
 
 		if (col !== null) {
@@ -8952,6 +8954,9 @@ Tracer.prototype.blocks = function(ray, distance, exclude) {
 };
 
 Tracer.prototype.trace = function(ray, exclude) {
+	var _m_ray = new Ray(vec3.create(), vec3.create());
+	var _disp = vec4.create();
+
 	var dist = null;
 	var disp = null;
 	var m_ray = null;
@@ -8962,18 +8967,18 @@ Tracer.prototype.trace = function(ray, exclude) {
 		if (i === exclude) continue;
 
 		var _e = this.entities[i];
-		var _m_ray = world_ray_to_model(ray, _e);
+		world_ray_to_model(_m_ray, ray, _e);
 		var _col = _e.col(_m_ray);
 
 		if (_col !== null ) {
-			var _disp = vec4.fromValues(_col.t * _m_ray.u[0], _col.t * _m_ray.u[1], _col.t * _m_ray.u[2], 0);
+			vec4.set(_disp, _col.t * _m_ray.u[0], _col.t * _m_ray.u[1], _col.t * _m_ray.u[2], 0);
 			vec4.transformMat4(_disp, _disp, _e.model);
 			var _dist = vec3.len(_disp);
 
 			if (dist === null || _dist < dist) {
 				dist = _dist;
-				disp = _disp;
-				m_ray = _m_ray;
+				disp = vec4.clone(_disp);
+				m_ray = new Ray(vec3.clone(_m_ray.p), vec3.clone(_m_ray.u));
 				col = _col;
 				id = i;
 			} 
@@ -9200,15 +9205,14 @@ Math.baseLog = function(x, y) {
 function param_ray(ray, t) {
 	return vec3.fromValues(ray.p[0] + ray.u[0] * t, ray.p[1] + ray.u[1] * t, ray.p[2] + ray.u[2] * t)
 }
-function world_ray_to_model(ray, entity) {
+function world_ray_to_model(m_ray, ray, entity) {
 	var m = entity.inverse_model;
-	return new Ray(
-		vec3.fromValues(
-			ray.p[0] * m[0] + ray.p[1] * m[4] + ray.p[2] * m[8] + m[12],
-			ray.p[0] * m[1] + ray.p[1] * m[5] + ray.p[2] * m[9] + m[13],
-			ray.p[0] * m[2] + ray.p[1] * m[6] + ray.p[2] * m[10] + m[14]),
-		vec3.fromValues(
-			ray.u[0] * m[0] + ray.u[1] * m[4] + ray.u[2] * m[8],
-			ray.u[0] * m[1] + ray.u[1] * m[5] + ray.u[2] * m[9],
-			ray.u[0] * m[2] + ray.u[1] * m[6] + ray.u[2] * m[10]));
+	vec3.set(m_ray.p,
+		ray.p[0] * m[0] + ray.p[1] * m[4] + ray.p[2] * m[8] + m[12],
+		ray.p[0] * m[1] + ray.p[1] * m[5] + ray.p[2] * m[9] + m[13],
+		ray.p[0] * m[2] + ray.p[1] * m[6] + ray.p[2] * m[10] + m[14]);
+	vec3.set(m_ray.u,
+		ray.u[0] * m[0] + ray.u[1] * m[4] + ray.u[2] * m[8],
+		ray.u[0] * m[1] + ray.u[1] * m[5] + ray.u[2] * m[9],
+		ray.u[0] * m[2] + ray.u[1] * m[6] + ray.u[2] * m[10]);
 }
