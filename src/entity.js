@@ -1,9 +1,8 @@
 /* jshint strict: false */
 /* exported Entity */
 
-function Entity(vertices, indices, model, col, hit) {
-	this.vertices = vertices;
-	this.indices = indices;
+function Entity(draw, model, col, hit) {
+	this.draw = draw;
 	this.model = model;
 
 	this.inverse_model = mat4.create();

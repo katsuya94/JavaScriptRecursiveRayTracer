@@ -5,12 +5,14 @@
 	<script id="static-vs" type="x-shader/x-vertex">
 
 attribute vec4 a_position;
+attribute vec4 a_normal;
 
 uniform mat4 u_mvp;
 
 varying vec4 v_color;
 
 void main() {
+	a_normal;
 	gl_Position = u_mvp * a_position;
 }
 

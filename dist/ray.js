@@ -8055,51 +8055,51 @@ window.cancelAnimFrame = (function() {
 
 // FILE SEPARATOR
 
-/* exported box */
+/* exported bo*/
 
-function box(x, y, z) {
+function box() {
 	var array = [
-		x - 2.0, y - 2.0, z - 2.0, 0.5, 0.5, 0.5,
-		x - 2.0, y + 2.0, z - 2.0, 0.5, 0.5, 0.5,
-		x - 2.0, y - 2.0, z + 2.0, 0.5, 0.5, 0.5,
-		x - 2.0, y + 2.0, z - 2.0, 0.5, 0.5, 0.5,
-		x - 2.0, y - 2.0, z + 2.0, 0.5, 0.5, 0.5,
-		x - 2.0, y + 2.0, z + 2.0, 0.5, 0.5, 0.5,
+		-1.0, -1.0, -1.0, -1.0, 0.0, 0.0,
+		-1.0, 1.0, -1.0, -1.0, 0.0, 0.0,
+		-1.0, -1.0, 1.0, -1.0, 0.0, 0.0,
+		-1.0, 1.0, -1.0, -1.0, 0.0, 0.0,
+		-1.0, -1.0, 1.0, -1.0, 0.0, 0.0,
+		-1.0, 1.0, 1.0, -1.0, 0.0, 0.0,
 
-		x + 2.0, y - 2.0, z - 2.0, 0.5, 0.5, 0.5,
-		x + 2.0, y + 2.0, z - 2.0, 0.5, 0.5, 0.5,
-		x + 2.0, y - 2.0, z + 2.0, 0.5, 0.5, 0.5,
-		x + 2.0, y + 2.0, z - 2.0, 0.5, 0.5, 0.5,
-		x + 2.0, y - 2.0, z + 2.0, 0.5, 0.5, 0.5,
-		x + 2.0, y + 2.0, z + 2.0, 0.5, 0.5, 0.5,
+		1.0, -1.0, -1.0, 1.0, 0.0, 0.0,
+		1.0, 1.0, -1.0, 1.0, 0.0, 0.0,
+		1.0, -1.0, 1.0, 1.0, 0.0, 0.0,
+		1.0, 1.0, -1.0, 1.0, 0.0, 0.0,
+		1.0, -1.0, 1.0, 1.0, 0.0, 0.0,
+		1.0, 1.0, 1.0, 1.0, 0.0, 0.0,
 
-		x - 2.0, y + 2.0, z - 2.0, 0.75, 0.75, 0.75,
-		x + 2.0, y + 2.0, z - 2.0, 0.75, 0.75, 0.75,
-		x - 2.0, y + 2.0, z + 2.0, 0.75, 0.75, 0.75,
-		x + 2.0, y + 2.0, z - 2.0, 0.75, 0.75, 0.75,
-		x - 2.0, y + 2.0, z + 2.0, 0.75, 0.75, 0.75,
-		x + 2.0, y + 2.0, z + 2.0, 0.75, 0.75, 0.75,
+		-1.0, 1.0, -1.0, 0.0, 1.0, 0.0,
+		1.0, 1.0, -1.0, 0.0, 1.0, 0.0,
+		-1.0, 1.0, 1.0, 0.0, 1.0, 0.0,
+		1.0, 1.0, -1.0, 0.0, 1.0, 0.0,
+		-1.0, 1.0, 1.0, 0.0, 1.0, 0.0,
+		1.0, 1.0, 1.0, 0.0, 1.0, 0.0,
 
-		x - 2.0, y - 2.0, z - 2.0, 0.75, 0.75, 0.75,
-		x + 2.0, y - 2.0, z - 2.0, 0.75, 0.75, 0.75,
-		x - 2.0, y - 2.0, z + 2.0, 0.75, 0.75, 0.75,
-		x + 2.0, y - 2.0, z - 2.0, 0.75, 0.75, 0.75,
-		x - 2.0, y - 2.0, z + 2.0, 0.75, 0.75, 0.75,
-		x + 2.0, y - 2.0, z + 2.0, 0.75, 0.75, 0.75,
+		-1.0, -1.0, -1.0, 0.0, -1.0, 0.0,
+		1.0, -1.0, -1.0, 0.0, -1.0, 0.0,
+		-1.0, -1.0, 1.0, 0.0, -1.0, 0.0,
+		1.0, -1.0, -1.0, 0.0, -1.0, 0.0,
+		-1.0, -1.0, 1.0, 0.0, -1.0, 0.0,
+		1.0, -1.0, 1.0, 0.0, -1.0, 0.0,
 
-		x - 2.0, y - 2.0, z - 2.0, 0.25, 0.25, 0.25,
-		x + 2.0, y - 2.0, z - 2.0, 0.25, 0.25, 0.25,
-		x - 2.0, y + 2.0, z - 2.0, 0.25, 0.25, 0.25,
-		x + 2.0, y - 2.0, z - 2.0, 0.25, 0.25, 0.25,
-		x - 2.0, y + 2.0, z - 2.0, 0.25, 0.25, 0.25,
-		x + 2.0, y + 2.0, z - 2.0, 0.25, 0.25, 0.25,
+		-1.0, -1.0, -1.0, 0.0, 0.0, -1.0,
+		1.0, -1.0, -1.0, 0.0, 0.0, -1.0,
+		-1.0, 1.0, -1.0, 0.0, 0.0, -1.0,
+		1.0, -1.0, -1.0, 0.0, 0.0, -1.0,
+		-1.0, 1.0, -1.0, 0.0, 0.0, -1.0,
+		1.0, 1.0, -1.0, 0.0, 0.0, -1.0,
 
-		x - 2.0, y - 2.0, z + 2.0, 0.25, 0.25, 0.25,
-		x + 2.0, y - 2.0, z + 2.0, 0.25, 0.25, 0.25,
-		x - 2.0, y + 2.0, z + 2.0, 0.25, 0.25, 0.25,
-		x + 2.0, y - 2.0, z + 2.0, 0.25, 0.25, 0.25,
-		x - 2.0, y + 2.0, z + 2.0, 0.25, 0.25, 0.25,
-		x + 2.0, y + 2.0, z + 2.0, 0.25, 0.25, 0.25,
+		-1.0, -1.0, 1.0, 0.0, 0.0, 1.0,
+		1.0, -1.0, 1.0, 0.0, 0.0, 1.0,
+		-1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+		1.0, -1.0, 1.0, 0.0, 0.0, 1.0,
+		-1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+		1.0, 1.0, 1.0, 0.0, 0.0, 1.0
 	];
 
 	return array;
@@ -8114,10 +8114,11 @@ function box(x, y, z) {
 
 function Buffers(program) {
 	this.a_position = gl.getAttribLocation(program, 'a_position');
+	this.a_normal = gl.getAttribLocation(program, 'a_normal');
 
 	this.u_mvp = gl.getUniformLocation(program, 'u_mvp');
 
-	this.draws = [];
+	this.entities = [];
 
 	this.vertices = [];
 	this.indices = [];
@@ -8125,47 +8126,57 @@ function Buffers(program) {
 	this.mvp = mat4.create();
 }
 
-Buffers.prototype.arrayDraw = function(ent, md) {
+Buffers.prototype.register = function(entity) {
+	this.entities.push(entity);
+};
+
+Buffers.prototype.arrayDraw = function(vertices, md) {
 	var offset = this.vertices.length / VSIZE;
-	var count = ent.vertices.length / VSIZE;
+	var count = vertices.length / VSIZE;
 	var mode = gl[md.toUpperCase()];
 
-	this.vertices = this.vertices.concat(ent.vertices);
+	this.vertices = this.vertices.concat(vertices);
 
 	var thisself = this;
 
-	this.draws.push(function(vp) {
-		mat4.multiply(thisself.mvp, ent.model, vp);
-		gl.uniformMatrix4fv(thisself.u_mvp, false, thisself.mvp);
-		gl.drawArrays(mode, offset, count);
-	});
+	return {
+		elements: false,
+		mode: mode,
+		offset: offset,
+		count: count,
+	}
 };
 
-Buffers.prototype.elementDraw = function(ent, md) {
+Buffers.prototype.elementDraw = function(vertices, indices, md) {
 	var offset = this.indices.length;
-	var count = ent.indices.length;
+	var count = indices.length;
 	var mode = gl[md.toUpperCase()];
 
 	var v_offset = this.vertices.length / VSIZE;
 
-	this.vertices = this.vertices.concat(ent.vertices);
+	this.vertices = this.vertices.concat(vertices);
 	
-	for (var i = 0; i < ent.indices.length; i++) {
-		this.indices.push(ent.indices[i] + v_offset);
+	for (var i = 0; i < indices.length; i++) {
+		this.indices.push(indices[i] + v_offset);
 	}
 
-	var thisself = this;
-
-	this.draws.push(function(vp) {
-		mat4.multiply(thisself.mvp, ent.model, vp);
-		gl.uniformMatrix4fv(thisself.u_mvp, false, thisself.mvp);
-		gl.drawElements(mode, count, gl.UNSIGNED_SHORT, offset * ESIZE);
-	});
+	return {
+		elements: true,
+		mode: mode,
+		offset: offset,
+		count: count,
+	}
 };
 
 Buffers.prototype.draw = function(camera) {
-	for (var i = 0; i < this.draws.length; i++) {
-		this.draws[i](camera.vp);
+	for (var i = 0; i < this.entities.length; i++) {
+		var e = this.entities[i];
+		mat4.multiply(this.mvp, camera.vp, e.model);
+		gl.uniformMatrix4fv(this.u_mvp, false, this.mvp);
+		if (e.draw.elements)
+			gl.drawElements(e.draw.mode, e.draw.count, gl.UNSIGNED_SHORT, e.draw.offset * ESIZE);
+		else
+			gl.drawArrays(e.draw.mode, e.draw.offset, e.draw.count);
 	}
 };
 
@@ -8176,6 +8187,7 @@ Buffers.prototype.populate = function() {
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
 
 	gl.enableVertexAttribArray(this.a_position);
+	gl.enableVertexAttribArray(this.a_normal);
 
 	var indexBuffer = gl.createBuffer();
 
@@ -8347,7 +8359,7 @@ function init_camera() {
 
 var ASIZE = (new Float32Array()).BYTES_PER_ELEMENT;
 var ESIZE = (new Uint16Array()).BYTES_PER_ELEMENT;
-var VSIZE = 3;
+var VSIZE = 6;
 
 var FOV = Math.PI / 3;
 var T_2 = Math.tan(FOV / 2);;
@@ -8356,9 +8368,8 @@ var T_2 = Math.tan(FOV / 2);;
 
 /* exported Entity */
 
-function Entity(vertices, indices, model, col, hit) {
-	this.vertices = vertices;
-	this.indices = indices;
+function Entity(draw, model, col, hit) {
+	this.draw = draw;
 	this.model = model;
 
 	this.inverse_model = mat4.create();
@@ -8376,17 +8387,6 @@ function Entity(vertices, indices, model, col, hit) {
 
 // FILE SEPARATOR
 
-var axes = new Entity([
-	0.0, 0.0, 0.0,
-	1.0, 0.0, 0.0,
-
-	0.0, 0.0, 0.0,
-	0.0, 1.0, 0.0,
-
-	0.0, 0.0, 0.0,
-	0.0, 0.0, 1.0
-], undefined, mat4.create(), undefined, undefined);
-
 function floor_hit(ray, col) {
 	var origin = param_ray(ray, col.t);
 	var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
@@ -8399,13 +8399,27 @@ function floor_col(ray) {
 }
 
 function scene_a(buffers, tracer) {
-	buffers.arrayDraw(axes, 'LINES');
+	var draw_axes = buffers.arrayDraw([
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 
-	var floor = new Entity(grid(), undefined, mat4.create(), floor_col, floor_hit);
-	buffers.arrayDraw(floor, 'LINES');
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0, 0.0, 0.0
+	], 'LINES');
+	var axes = new Entity(draw_axes, mat4.create(), undefined, undefined);
+	buffers.register(axes)
+
+	var draw_grid = buffers.arrayDraw(grid(), 'LINES');
+	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit);
+	buffers.register(floor);
 	tracer.register(floor);
 
 	// Spheres
+
+	var draw_sphere = buffers.elementDraw(sphere_mesh().vertices, sphere_mesh().indices, 'TRIANGLES');
 
 	function sphere(ray) {
 		var a = ray.u[0] * ray.u[0] + ray.u[1] * ray.u[1] + ray.u[2] * ray.u[2];
@@ -8440,35 +8454,35 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [0, 0, 2]);
 	mat4.scale(transform, transform, [2, 2, 2]);
 
-	var sphere_a = new Entity(undefined, undefined, transform, sphere, metal);
+	var sphere_a = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_a);
 
 	transform = mat4.create();
 	mat4.translate(transform, transform, [-2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_b = new Entity(undefined, undefined, transform, sphere, metal);
+	var sphere_b = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_b);
 
 	transform = mat4.create();
 	mat4.translate(transform, transform, [2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_c = new Entity(undefined, undefined, transform, sphere, metal);
+	var sphere_c = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_c);
 
 	transform = mat4.create();
 	mat4.translate(transform, transform, [0, -2.5, 2]);
 	mat4.scale(transform, transform, [2, 0.5, 2]);
 
-	var sphere_d = new Entity(undefined, undefined, transform, sphere, metal);
+	var sphere_d = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_d);
 
 	transform = mat4.create();
 	mat4.translate(transform, transform, [0, 2.5, 2]);
 	mat4.scale(transform, transform, [2, 0.5, 2]);
 
-	var sphere_e = new Entity(undefined, undefined, transform, sphere, metal);
+	var sphere_e = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_e);
 
 	tracer.light(new Light(
@@ -8485,10 +8499,22 @@ function scene_a(buffers, tracer) {
 }
 
 function scene_b(buffers, tracer) {
-	buffers.arrayDraw(axes, 'LINES');
+	var draw_axes = buffers.arrayDraw([
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 
-	var floor = new Entity(grid(), undefined, mat4.create(), floor_col, floor_hit);
-	buffers.arrayDraw(floor, 'LINES');
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0, 0.0, 0.0
+	], 'LINES');
+	var axes = new Entity(draw_axes, mat4.create(), undefined, undefined);
+	buffers.register(axes)
+
+	var draw_grid = buffers.arrayDraw(grid(), 'LINES');
+	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit);
+	buffers.register(floor);
 	tracer.register(floor);
 
 	// Cube
@@ -8590,7 +8616,10 @@ function scene_b(buffers, tracer) {
 	mat4.translate(transform, transform, [0, 0, 2]);
 	mat4.scale(transform, transform, [2, 2, 2]);
 
-	var cube_a = new Entity(undefined, undefined, transform, bump_cube, bump_hit);
+	var draw_cube = buffers.arrayDraw(box(), 'TRIANGLES');
+
+	var cube_a = new Entity(draw_cube, transform, bump_cube, bump_hit);
+	buffers.register(cube_a);
 	tracer.register(cube_a);
 
 	function side(ray, n, a, b) {
@@ -8651,7 +8680,8 @@ function scene_b(buffers, tracer) {
 	mat4.scale(transform, transform, [2, 2, 2]);
 	mat4.rotateX(transform, transform, Math.PI / 4);
 
-	var cube_b = new Entity(undefined, undefined, transform, cube, red_hit);
+	var cube_b = new Entity(draw_cube, transform, cube, red_hit);
+	buffers.register(cube_b);
 	tracer.register(cube_b);
 
 	transform = mat4.create();
@@ -8659,7 +8689,8 @@ function scene_b(buffers, tracer) {
 	mat4.scale(transform, transform, [2, 2, 2]);
 	mat4.rotateX(transform, transform, -Math.PI / 4);
 
-	var cube_c = new Entity(undefined, undefined, transform, cube, cyan_hit);
+	var cube_c = new Entity(draw_cube, transform, cube, cyan_hit);
+	buffers.register(cube_c);
 	tracer.register(cube_c);
 
 	transform = mat4.create();
@@ -8667,7 +8698,8 @@ function scene_b(buffers, tracer) {
 	mat4.scale(transform, transform, [2, 2, 2]);
 	mat4.rotateY(transform, transform, Math.PI / 4);
 
-	var cube_d = new Entity(undefined, undefined, transform, cube, green_hit);
+	var cube_d = new Entity(draw_cube, transform, cube, green_hit);
+	buffers.register(cube_d);
 	tracer.register(cube_d);
 
 	transform = mat4.create();
@@ -8675,7 +8707,8 @@ function scene_b(buffers, tracer) {
 	mat4.scale(transform, transform, [2, 2, 2]);
 	mat4.rotateY(transform, transform, -Math.PI / 4);
 
-	var cube_e = new Entity(undefined, undefined, transform, cube, magenta_hit);
+	var cube_e = new Entity(draw_cube, transform, cube, magenta_hit);
+	buffers.register(cube_e);
 	tracer.register(cube_e);
 
 	tracer.light(new Light(
@@ -8715,10 +8748,10 @@ var GRID_INT = 1.0;
 function grid() {
 	var array = [];
 	for(var i = -GRID_NUM; i <= GRID_NUM; i++) {
-		array = array.concat([GRID_INT * GRID_NUM, GRID_INT * i, 0.0]);
-		array = array.concat([-GRID_INT * GRID_NUM, GRID_INT * i, 0.0]);
-		array = array.concat([GRID_INT * i, GRID_INT * GRID_NUM, 0.0]);
-		array = array.concat([GRID_INT * i, -GRID_INT * GRID_NUM, 0.0]);
+		array = array.concat([GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.0, 0.0, 0.0,]);
+		array = array.concat([-GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.0, 0.0, 0.0,]);
+		array = array.concat([GRID_INT * i, GRID_INT * GRID_NUM, 0.0, 0.0, 0.0, 0.0,]);
+		array = array.concat([GRID_INT * i, -GRID_INT * GRID_NUM, 0.0, 0.0, 0.0, 0.0,]);
 	}
 	return array;
 };
@@ -8752,7 +8785,7 @@ function main() {
 	camera = init_camera();
 
 	// Geometry
-	scene_b(buffers, tracer);
+	scene_a(buffers, tracer);
 	buffers.populate();
 
 	var flag = true;
@@ -8853,7 +8886,8 @@ function main() {
 		gl.viewport(0, 0, gl.drawingBufferWidth/2, gl.drawingBufferHeight);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex)
-		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 3 * ASIZE, 0 * ASIZE);
+		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 6 * ASIZE, 0 * ASIZE);
+		gl.vertexAttribPointer(buffers.a_normal, 3, gl.FLOAT, false, 6 * ASIZE, 3 * ASIZE);
 
 		camera.update(dt);
 		buffers.draw(camera);
@@ -8895,13 +8929,6 @@ var PEWTER = new Material(
 	vec3.fromValues(0.105882, 0.058824, 0.113725),
 	vec3.fromValues(0.333333, 0.333333, 0.521569),
 	vec3.fromValues(0.427451, 0.470588, 0.541176),
-	9.84615);
-
-var _PEWTER = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.113725, 0.058824, 0.105882),
-	vec3.fromValues(0.521569, 0.333333, 0.333333),
-	vec3.fromValues(0.541176, 0.470588, 0.427451),
 	9.84615);
 
 var BLACK_PLASTIC = new Material(
@@ -8946,13 +8973,6 @@ var MAGENTA_PLASTIC = new Material(
 	vec3.fromValues(0.7, 0.0, 0.7),
 	4.0);
 
-var SILVER = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.19225, 0.19225, 0.19225),
-	vec3.fromValues(0.50754, 0.50754, 0.50754),
-	vec3.fromValues(0.508273, 0.508273, 0.508273),
-	2.5);
-
 var METAL = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
@@ -8965,8 +8985,8 @@ var METAL = new Material(
 /* exported sphere */
 
 // From JTPointPhongSphere_PerFragment.js
-function sphere(offset, x, y, z) {
-	var SPHERE_DIV = 51;
+function sphere_mesh() {
+	var SPHERE_DIV = 17;
 
 	var i, ai, si, ci;
 	var j, aj, sj, cj;
@@ -8986,9 +9006,13 @@ function sphere(offset, x, y, z) {
 			ci = Math.cos(ai);
 
 			// Positions
-			positions.push(2 * si * sj + x);
-			positions.push(2 * cj + y);
-			positions.push(2 * ci * sj + z);
+			positions.push(si * sj);
+			positions.push(cj);
+			positions.push(ci * sj);
+
+			// positions.push(si * sj);
+			// positions.push(cj);
+			// positions.push(ci * sj);
 		}
 	}
 
@@ -8998,13 +9022,13 @@ function sphere(offset, x, y, z) {
 			p1 = j * (SPHERE_DIV+1) + i;
 			p2 = p1 + (SPHERE_DIV+1);
 
-			indices.push(p1 + offset);
-			indices.push(p2 + offset);
-			indices.push(p1 + 1 + offset);
+			indices.push(p1);
+			indices.push(p2);
+			indices.push(p1 + 1);
 
-			indices.push(p1 + 1 + offset);
-			indices.push(p2 + offset);
-			indices.push(p2 + 1 + offset);
+			indices.push(p1 + 1);
+			indices.push(p2);
+			indices.push(p2 + 1);
 		}
 	}
 

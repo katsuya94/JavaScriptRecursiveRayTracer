@@ -2,8 +2,8 @@
 /* exported sphere */
 
 // From JTPointPhongSphere_PerFragment.js
-function sphere(offset, x, y, z) {
-	var SPHERE_DIV = 51;
+function sphere_mesh() {
+	var SPHERE_DIV = 17;
 
 	var i, ai, si, ci;
 	var j, aj, sj, cj;
@@ -23,9 +23,13 @@ function sphere(offset, x, y, z) {
 			ci = Math.cos(ai);
 
 			// Positions
-			positions.push(2 * si * sj + x);
-			positions.push(2 * cj + y);
-			positions.push(2 * ci * sj + z);
+			positions.push(si * sj);
+			positions.push(cj);
+			positions.push(ci * sj);
+
+			positions.push(si * sj);
+			positions.push(cj);
+			positions.push(ci * sj);
 		}
 	}
 
@@ -35,13 +39,13 @@ function sphere(offset, x, y, z) {
 			p1 = j * (SPHERE_DIV+1) + i;
 			p2 = p1 + (SPHERE_DIV+1);
 
-			indices.push(p1 + offset);
-			indices.push(p2 + offset);
-			indices.push(p1 + 1 + offset);
+			indices.push(p1);
+			indices.push(p2);
+			indices.push(p1 + 1);
 
-			indices.push(p1 + 1 + offset);
-			indices.push(p2 + offset);
-			indices.push(p2 + 1 + offset);
+			indices.push(p1 + 1);
+			indices.push(p2);
+			indices.push(p2 + 1);
 		}
 	}
 

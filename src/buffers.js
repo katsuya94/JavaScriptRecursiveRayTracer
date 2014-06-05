@@ -6,10 +6,11 @@
 
 function Buffers(program) {
 	this.a_position = gl.getAttribLocation(program, 'a_position');
+	this.a_normal = gl.getAttribLocation(program, 'a_normal');
 
 	this.u_mvp = gl.getUniformLocation(program, 'u_mvp');
 
-	this.draws = [];
+	this.entities = [];
 
 	this.vertices = [];
 	this.indices = [];
@@ -17,47 +18,57 @@ function Buffers(program) {
 	this.mvp = mat4.create();
 }
 
-Buffers.prototype.arrayDraw = function(ent, md) {
+Buffers.prototype.register = function(entity) {
+	this.entities.push(entity);
+};
+
+Buffers.prototype.arrayDraw = function(vertices, md) {
 	var offset = this.vertices.length / VSIZE;
-	var count = ent.vertices.length / VSIZE;
+	var count = vertices.length / VSIZE;
 	var mode = gl[md.toUpperCase()];
 
-	this.vertices = this.vertices.concat(ent.vertices);
+	this.vertices = this.vertices.concat(vertices);
 
 	var thisself = this;
 
-	this.draws.push(function(vp) {
-		mat4.multiply(thisself.mvp, ent.model, vp);
-		gl.uniformMatrix4fv(thisself.u_mvp, false, thisself.mvp);
-		gl.drawArrays(mode, offset, count);
-	});
+	return {
+		elements: false,
+		mode: mode,
+		offset: offset,
+		count: count,
+	}
 };
 
-Buffers.prototype.elementDraw = function(ent, md) {
+Buffers.prototype.elementDraw = function(vertices, indices, md) {
 	var offset = this.indices.length;
-	var count = ent.indices.length;
+	var count = indices.length;
 	var mode = gl[md.toUpperCase()];
 
 	var v_offset = this.vertices.length / VSIZE;
 
-	this.vertices = this.vertices.concat(ent.vertices);
+	this.vertices = this.vertices.concat(vertices);
 	
-	for (var i = 0; i < ent.indices.length; i++) {
-		this.indices.push(ent.indices[i] + v_offset);
+	for (var i = 0; i < indices.length; i++) {
+		this.indices.push(indices[i] + v_offset);
 	}
 
-	var thisself = this;
-
-	this.draws.push(function(vp) {
-		mat4.multiply(thisself.mvp, ent.model, vp);
-		gl.uniformMatrix4fv(thisself.u_mvp, false, thisself.mvp);
-		gl.drawElements(mode, count, gl.UNSIGNED_SHORT, offset * ESIZE);
-	});
+	return {
+		elements: true,
+		mode: mode,
+		offset: offset,
+		count: count,
+	}
 };
 
 Buffers.prototype.draw = function(camera) {
-	for (var i = 0; i < this.draws.length; i++) {
-		this.draws[i](camera.vp);
+	for (var i = 0; i < this.entities.length; i++) {
+		var e = this.entities[i];
+		mat4.multiply(this.mvp, camera.vp, e.model);
+		gl.uniformMatrix4fv(this.u_mvp, false, this.mvp);
+		if (e.draw.elements)
+			gl.drawElements(e.draw.mode, e.draw.count, gl.UNSIGNED_SHORT, e.draw.offset * ESIZE);
+		else
+			gl.drawArrays(e.draw.mode, e.draw.offset, e.draw.count);
 	}
 };
 
@@ -68,6 +79,7 @@ Buffers.prototype.populate = function() {
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
 
 	gl.enableVertexAttribArray(this.a_position);
+	gl.enableVertexAttribArray(this.a_normal);
 
 	var indexBuffer = gl.createBuffer();
 
