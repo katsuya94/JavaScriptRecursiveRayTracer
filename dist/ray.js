@@ -9116,9 +9116,7 @@ Tracer.prototype.snap = function(aa, detail, recursion) {
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));
 
-	var before = Date.now();
 	var image = this.rasterize(width, height, big_width, big_height, aa);
-	console.log(Date.now() - before + 'ms Elapsed');
 
 	var tex_image = gl.createTexture();
 	gl.activeTexture(gl.TEXTURE0);
