@@ -8407,7 +8407,7 @@ function geometry(buffers, tracer) {
 
 	// Spheres
 
-	var sphere = function(ray) {
+	function sphere(ray) {
 		var a = ray.u[0] * ray.u[0] + ray.u[1] * ray.u[1] + ray.u[2] * ray.u[2];
 		var b = 2 * (ray.p[0] * ray.u[0] + ray.p[1] * ray.u[1] + ray.p[2] * ray.u[2]);
 		var c = ray.p[0] * ray.p[0] + ray.p[1] * ray.p[1] + ray.p[2] * ray.p[2] - 1;
@@ -8431,7 +8431,7 @@ function geometry(buffers, tracer) {
 		return { t: t };
 	}
 
-	var metal = function(ray, col) {
+	function metal(ray, col) {
 		var origin = param_ray(ray, col.t);
 		return new Hit(ray, origin, origin, METAL);
 	}
@@ -8483,46 +8483,48 @@ function geometry(buffers, tracer) {
 		ctx.drawImage(tex, 0, 0);
 		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
 		sample = function(x, y) {
-			var u = x * tex.width - 0.5;
-			var v = y * tex.height - 0.5;
+			var u = x * (tex.width - 1);
+			var v = y * (tex.height - 1);
 			x = ~~u;
 			y = ~~v;
 			var dx = u - x;
+			var _dx = 1 - dx
 			var dy = v - y;
+			var _dy = 1 - dy;
 			
-			var ll = vec3.fromValues(
-				data[tex.width * 4 * (y) + (x) * 4],
-				data[tex.width * 4 * (y) + (x) * 4 + 1],
-				data[tex.width * 4 * (y) + (x) * 4 + 2]);
-			var lr = vec3.fromValues(
-				data[tex.width * 4 * (y) + (x + 1) * 4],
-				data[tex.width * 4 * (y) + (x + 1) * 4 + 1],
-				data[tex.width * 4 * (y) + (x + 1) * 4 + 2]);
 			var ul = vec3.fromValues(
 				data[tex.width * 4 * (y) + (x) * 4],
 				data[tex.width * 4 * (y) + (x) * 4 + 1],
 				data[tex.width * 4 * (y) + (x) * 4 + 2]);
 			var ur = vec3.fromValues(
+				data[tex.width * 4 * (y) + (x + 1) * 4],
+				data[tex.width * 4 * (y) + (x + 1) * 4 + 1],
+				data[tex.width * 4 * (y) + (x + 1) * 4 + 2]);
+			var ll = vec3.fromValues(
+				data[tex.width * 4 * (y + 1) + (x) * 4],
+				data[tex.width * 4 * (y + 1) + (x) * 4 + 1],
+				data[tex.width * 4 * (y + 1) + (x) * 4 + 2]);
+			var lr = vec3.fromValues(
 				data[tex.width * 4 * (y + 1) + (x + 1) * 4],
 				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 1],
 				data[tex.width * 4 * (y + 1) + (x + 1) * 4 + 2]);
 			var l = vec3.fromValues(
-				(1 - dx) * ll[0] + dx * lr[0],
-				(1 - dx) * ll[1] + dx * lr[1],
-				(1 - dx) * ll[2] + dx * lr[2]);
+				_dx * ll[0] + dx * lr[0],
+				_dx * ll[1] + dx * lr[1],
+				_dx * ll[2] + dx * lr[2]);
 			var u = vec3.fromValues(
-				(1 - dx) * ul[0] + dx * ur[0],
-				(1 - dx) * ul[1] + dx * ur[1],
-				(1 - dx) * ul[2] + dx * ur[2]);
+				_dx * ul[0] + dx * ur[0],
+				_dx * ul[1] + dx * ur[1],
+				_dx * ul[2] + dx * ur[2]);
 			return vec3.fromValues(
-				((1 - dy) * l[0] + dy * u[0]) / 256,
-				((1 - dy) * l[1] + dy * u[1]) / 256,
-				((1 - dy) * l[2] + dy * u[2]) / 256);
+				(dy * l[0] + _dy * u[0]) / 256,
+				(dy * l[1] + _dy * u[1]) / 256,
+				(dy * l[2] + _dy * u[2]) / 256);
 		}
 	}, false);
 	tex.src = 'normal.jpg';
 
-	var side = function(ray, n, u, v, a, b) {
+	function side(ray, n, u, v, a, b) {
 		var d = vec3.dot(ray.u, n);
 		if (d < 0) {
 			var t = -(vec3.dot(ray.p, n) - 1) / d;
@@ -8536,7 +8538,7 @@ function geometry(buffers, tracer) {
 		return null;
 	};
 
-	var cube = function(ray) {
+	function cube(ray) {
 		var h;
 
 		h = side(ray, X, Y, Z, 1, 2);
@@ -8555,7 +8557,7 @@ function geometry(buffers, tracer) {
 		return null;
 	};
 
-	var cube_hit = function(ray, col) {
+	function cube_hit(ray, col) {
 		var normal = vec3.clone(col.normal);
 		var s = sample(col.origin[col.a] / 2 + 0.5, col.origin[col.b] / 2 + 0.5);
 		vec3.scaleAndAdd(normal, normal, col.u, (s[0] - 0.5) * 2);
@@ -8930,19 +8932,12 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 	vec3.add(pixel, pixel, specular);
 };
 
-Tracer.prototype.world_ray_to_model = function(ray, entity) {
-	var model_ray = new Ray(vec4.fromValues(ray.p[0], ray.p[1], ray.p[2], 1), vec4.fromValues(ray.u[0], ray.u[1], ray.u[2], 0));
-	vec4.transformMat4(model_ray.p, model_ray.p, entity.inverse_model);
-	vec4.transformMat4(model_ray.u, model_ray.u, entity.inverse_model);
-	return model_ray;
-}
-
 Tracer.prototype.blocks = function(ray, distance, exclude) {
 	for (var i = 0; i < this.entities.length; i++) {
 		if (i === exclude) continue;
 
 		var e = this.entities[i];
-		var m_ray = this.world_ray_to_model(ray, e);
+		var m_ray = world_ray_to_model(ray, e);
 		var col = e.col(m_ray);
 
 		if (col !== null) {
@@ -8967,7 +8962,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 		if (i === exclude) continue;
 
 		var _e = this.entities[i];
-		var _m_ray = this.world_ray_to_model(ray, _e);
+		var _m_ray = world_ray_to_model(ray, _e);
 		var _col = _e.col(_m_ray);
 
 		if (_col !== null ) {
@@ -9116,7 +9111,9 @@ Tracer.prototype.snap = function(aa, detail, recursion) {
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));
 
+	var before = Date.now();
 	var image = this.rasterize(width, height, big_width, big_height, aa);
+	console.log(Date.now() - before + 'ms Elapsed');
 
 	var tex_image = gl.createTexture();
 	gl.activeTexture(gl.TEXTURE0);
@@ -9202,4 +9199,16 @@ Math.baseLog = function(x, y) {
 
 function param_ray(ray, t) {
 	return vec3.fromValues(ray.p[0] + ray.u[0] * t, ray.p[1] + ray.u[1] * t, ray.p[2] + ray.u[2] * t)
+}
+function world_ray_to_model(ray, entity) {
+	var m = entity.inverse_model;
+	return new Ray(
+		vec3.fromValues(
+			ray.p[0] * m[0] + ray.p[1] * m[4] + ray.p[2] * m[8] + m[12],
+			ray.p[0] * m[1] + ray.p[1] * m[5] + ray.p[2] * m[9] + m[13],
+			ray.p[0] * m[2] + ray.p[1] * m[6] + ray.p[2] * m[10] + m[14]),
+		vec3.fromValues(
+			ray.u[0] * m[0] + ray.u[1] * m[4] + ray.u[2] * m[8],
+			ray.u[0] * m[1] + ray.u[1] * m[5] + ray.u[2] * m[9],
+			ray.u[0] * m[2] + ray.u[1] * m[6] + ray.u[2] * m[10]));
 }

@@ -46,3 +46,15 @@ Math.baseLog = function(x, y) {
 function param_ray(ray, t) {
 	return vec3.fromValues(ray.p[0] + ray.u[0] * t, ray.p[1] + ray.u[1] * t, ray.p[2] + ray.u[2] * t)
 }
+function world_ray_to_model(ray, entity) {
+	var m = entity.inverse_model;
+	return new Ray(
+		vec3.fromValues(
+			ray.p[0] * m[0] + ray.p[1] * m[4] + ray.p[2] * m[8] + m[12],
+			ray.p[0] * m[1] + ray.p[1] * m[5] + ray.p[2] * m[9] + m[13],
+			ray.p[0] * m[2] + ray.p[1] * m[6] + ray.p[2] * m[10] + m[14]),
+		vec3.fromValues(
+			ray.u[0] * m[0] + ray.u[1] * m[4] + ray.u[2] * m[8],
+			ray.u[0] * m[1] + ray.u[1] * m[5] + ray.u[2] * m[9],
+			ray.u[0] * m[2] + ray.u[1] * m[6] + ray.u[2] * m[10]));
+}

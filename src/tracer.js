@@ -104,19 +104,12 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 	vec3.add(pixel, pixel, specular);
 };
 
-Tracer.prototype.world_ray_to_model = function(ray, entity) {
-	var model_ray = new Ray(vec4.fromValues(ray.p[0], ray.p[1], ray.p[2], 1), vec4.fromValues(ray.u[0], ray.u[1], ray.u[2], 0));
-	vec4.transformMat4(model_ray.p, model_ray.p, entity.inverse_model);
-	vec4.transformMat4(model_ray.u, model_ray.u, entity.inverse_model);
-	return model_ray;
-}
-
 Tracer.prototype.blocks = function(ray, distance, exclude) {
 	for (var i = 0; i < this.entities.length; i++) {
 		if (i === exclude) continue;
 
 		var e = this.entities[i];
-		var m_ray = this.world_ray_to_model(ray, e);
+		var m_ray = world_ray_to_model(ray, e);
 		var col = e.col(m_ray);
 
 		if (col !== null) {
@@ -141,7 +134,7 @@ Tracer.prototype.trace = function(ray, exclude) {
 		if (i === exclude) continue;
 
 		var _e = this.entities[i];
-		var _m_ray = this.world_ray_to_model(ray, _e);
+		var _m_ray = world_ray_to_model(ray, _e);
 		var _col = _e.col(_m_ray);
 
 		if (_col !== null ) {
@@ -290,7 +283,9 @@ Tracer.prototype.snap = function(aa, detail, recursion) {
 	var big_width = Math.pow(2, Math.ceil(Math.baseLog(2, width)));
 	var big_height = Math.pow(2, Math.ceil(Math.baseLog(2, height)));
 
+	var before = Date.now();
 	var image = this.rasterize(width, height, big_width, big_height, aa);
+	console.log(Date.now() - before + 'ms Elapsed');
 
 	var tex_image = gl.createTexture();
 	gl.activeTexture(gl.TEXTURE0);
