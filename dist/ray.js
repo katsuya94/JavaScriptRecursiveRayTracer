@@ -8378,30 +8378,35 @@ function Entity(vertices, indices, model, col, hit) {
 
 // FILE SEPARATOR
 
+var axes = new Entity([
+	0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+	0.0, 1.0, 0.0, 1.0, 0.0, 0.0,
+	0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
+
+	0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+	1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+	0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+
+	0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+	0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
+	1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+], undefined, mat4.create(), undefined, undefined);
+
+function floor_hit(ray, col) {
+	var origin = param_ray(ray, col.t);
+	var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
+	return new Hit(ray, origin, Z, m)
+}
+
+function floor_col(ray) {
+	var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
+	return t > 0 ? { t: t } : null;
+}
+
 function scene_a(buffers, tracer) {
-	var axes = new Entity([
-		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-		0.0, 1.0, 0.0, 1.0, 0.0, 0.0,
-		0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
-
-		0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-		1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-		0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
-
-		0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-		0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
-		1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-	], undefined, mat4.create(), undefined);
 	buffers.arrayDraw(axes, 'TRIANGLES');
 
-	var floor = new Entity(grid(), undefined, mat4.create(), function(ray) {
-		var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
-		return t > 0 ? { t: t } : null;
-	}, function(ray, col) {
-		var origin = param_ray(ray, col.t);
-		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
-		return new Hit(ray, origin, Z, m)
-	});
+	var floor = new Entity(grid(), undefined, mat4.create(), floor_col, floor_hit);
 	buffers.arrayDraw(floor, 'LINES');
 	tracer.register(floor);
 
@@ -8485,29 +8490,9 @@ function scene_a(buffers, tracer) {
 }
 
 function scene_b(buffers, tracer) {
-	var axes = new Entity([
-		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-		0.0, 1.0, 0.0, 1.0, 0.0, 0.0,
-		0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
-
-		0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-		1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-		0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
-
-		0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-		0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
-		1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-	], undefined, mat4.create(), undefined);
 	buffers.arrayDraw(axes, 'TRIANGLES');
 
-	var floor = new Entity(grid(), undefined, mat4.create(), function(ray) {
-		var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
-		return t > 0 ? { t: t } : null;
-	}, function(ray, col) {
-		var origin = param_ray(ray, col.t);
-		var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
-		return new Hit(ray, origin, Z, m)
-	});
+	var floor = new Entity(grid(), undefined, mat4.create(), floor_col, floor_hit);
 	buffers.arrayDraw(floor, 'LINES');
 	tracer.register(floor);
 
