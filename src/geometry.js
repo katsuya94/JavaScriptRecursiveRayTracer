@@ -67,6 +67,7 @@ function scene_a(buffers, tracer) {
 
 	var sphere_a = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_a);
+	buffers.register(sphere_a);
 
 	transform = mat4.create();
 	mat4.translate(transform, transform, [-2.5, 0, 2]);
@@ -74,6 +75,7 @@ function scene_a(buffers, tracer) {
 
 	var sphere_b = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_b);
+	buffers.register(sphere_b);
 
 	transform = mat4.create();
 	mat4.translate(transform, transform, [2.5, 0, 2]);
@@ -81,6 +83,7 @@ function scene_a(buffers, tracer) {
 
 	var sphere_c = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_c);
+	buffers.register(sphere_c);
 
 	transform = mat4.create();
 	mat4.translate(transform, transform, [0, -2.5, 2]);
@@ -88,6 +91,7 @@ function scene_a(buffers, tracer) {
 
 	var sphere_d = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_d);
+	buffers.register(sphere_d);
 
 	transform = mat4.create();
 	mat4.translate(transform, transform, [0, 2.5, 2]);
@@ -95,6 +99,7 @@ function scene_a(buffers, tracer) {
 
 	var sphere_e = new Entity(draw_sphere, transform, sphere, metal);
 	tracer.register(sphere_e);
+	buffers.register(sphere_e);
 
 	tracer.light(new Light(
 		vec3.fromValues(20.0, 0.0, 20.0),

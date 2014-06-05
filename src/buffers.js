@@ -51,7 +51,7 @@ Buffers.prototype.elementDraw = function(vertices, indices, md) {
 	for (var i = 0; i < indices.length; i++) {
 		this.indices.push(indices[i] + v_offset);
 	}
-
+	
 	return {
 		elements: true,
 		mode: mode,
