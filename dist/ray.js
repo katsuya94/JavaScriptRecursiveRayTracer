@@ -8113,6 +8113,8 @@ function box() {
 /* exported init_buffers */
 
 function Buffers(program) {
+	this.buffer_vertex = gl.createBuffer();
+	
 	this.a_position = gl.getAttribLocation(program, 'a_position');
 	this.a_normal = gl.getAttribLocation(program, 'a_normal');
 
@@ -8120,15 +8122,28 @@ function Buffers(program) {
 
 	this.entities = [];
 
+	this.lights = [];
+
 	this.vertices = [];
 	this.indices = [];
 
 	this.mvp = mat4.create();
 }
 
+Buffers.prototype.clear = function() {
+	this.entities = [];
+	this.lights = [];
+	this.vertices = [];
+	this.indices = [];
+};
+
 Buffers.prototype.register = function(entity) {
 	this.entities.push(entity);
 };
+
+Buffers.prototype.light = function(light) {
+	this.lights.push(light);
+}
 
 Buffers.prototype.arrayDraw = function(vertices, md) {
 	var offset = this.vertices.length / VSIZE;
@@ -8144,7 +8159,7 @@ Buffers.prototype.arrayDraw = function(vertices, md) {
 		mode: mode,
 		offset: offset,
 		count: count,
-	}
+	};
 };
 
 Buffers.prototype.elementDraw = function(vertices, indices, md) {
@@ -8165,7 +8180,7 @@ Buffers.prototype.elementDraw = function(vertices, indices, md) {
 		mode: mode,
 		offset: offset,
 		count: count,
-	}
+	};
 };
 
 Buffers.prototype.draw = function(camera) {
@@ -8173,16 +8188,15 @@ Buffers.prototype.draw = function(camera) {
 		var e = this.entities[i];
 		mat4.multiply(this.mvp, camera.vp, e.model);
 		gl.uniformMatrix4fv(this.u_mvp, false, this.mvp);
-		if (e.draw.elements)
+		if (e.draw.elements) {
 			gl.drawElements(e.draw.mode, e.draw.count, gl.UNSIGNED_SHORT, e.draw.offset * ESIZE);
-		else
+		} else {
 			gl.drawArrays(e.draw.mode, e.draw.offset, e.draw.count);
+		}
 	}
 };
 
 Buffers.prototype.populate = function() {
-	this.buffer_vertex = gl.createBuffer();
-
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer_vertex);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
 
@@ -8665,82 +8679,72 @@ function scene_b(buffers, tracer) {
 		return new Hit(ray, origin, col.normal, RED_PLASTIC);
 	}
 
-	function cyan_hit(ray, col) {
-		var origin = param_ray(ray, col.t);
-		return new Hit(ray, origin, col.normal, CYAN_PLASTIC);
-	}
-
 	function green_hit(ray, col) {
 		var origin = param_ray(ray, col.t);
 		return new Hit(ray, origin, col.normal, GREEN_PLASTIC);
 	}
 
-	function magenta_hit(ray, col) {
+	function blue_hit(ray, col) {
 		var origin = param_ray(ray, col.t);
-		return new Hit(ray, origin, col.normal, MAGENTA_PLASTIC);
+		return new Hit(ray, origin, col.normal, BLUE_PLASTIC);
 	}
 
 	transform = mat4.create();
-	mat4.translate(transform, transform, [0, 6, 8]);
-	mat4.scale(transform, transform, [2, 2, 2]);
+	mat4.translate(transform, transform, [6 * Math.cos(Math.PI / 3), 6 * Math.sin(Math.PI / 3), 8]);
+	mat4.rotateZ(transform, transform, Math.PI / 3);
 	mat4.rotateX(transform, transform, Math.PI / 4);
+	mat4.scale(transform, transform, [2, 2, 2]);
 
 	var cube_b = new Entity(draw_cube, transform, cube, red_hit);
 	buffers.register(cube_b);
 	tracer.register(cube_b);
 
 	transform = mat4.create();
-	mat4.translate(transform, transform, [0, -6, 8]);
+	mat4.translate(transform, transform, [6 * Math.cos(3 * Math.PI / 3), 6 * Math.sin(3 * Math.PI / 3), 8]);
+	mat4.rotateZ(transform, transform, 3 * Math.PI / 3);
+	mat4.rotateX(transform, transform, Math.PI / 4);
 	mat4.scale(transform, transform, [2, 2, 2]);
-	mat4.rotateX(transform, transform, -Math.PI / 4);
 
-	var cube_c = new Entity(draw_cube, transform, cube, cyan_hit);
+	var cube_c = new Entity(draw_cube, transform, cube, green_hit);
 	buffers.register(cube_c);
 	tracer.register(cube_c);
 
 	transform = mat4.create();
-	mat4.translate(transform, transform, [6, 0, 8]);
+	mat4.translate(transform, transform, [6 * Math.cos(5 * Math.PI / 3), 6 * Math.sin(5 * Math.PI / 3), 8]);
+	mat4.rotateZ(transform, transform, 5 * Math.PI / 3);
+	mat4.rotateX(transform, transform, Math.PI / 4);
 	mat4.scale(transform, transform, [2, 2, 2]);
-	mat4.rotateY(transform, transform, Math.PI / 4);
 
-	var cube_d = new Entity(draw_cube, transform, cube, green_hit);
-	buffers.register(cube_d);
-	tracer.register(cube_d);
+	var cube_c = new Entity(draw_cube, transform, cube, blue_hit);
+	buffers.register(cube_c);
+	tracer.register(cube_c);
 
-	transform = mat4.create();
-	mat4.translate(transform, transform, [-6, 0, 8]);
-	mat4.scale(transform, transform, [2, 2, 2]);
-	mat4.rotateY(transform, transform, -Math.PI / 4);
-
-	var cube_e = new Entity(draw_cube, transform, cube, magenta_hit);
-	buffers.register(cube_e);
-	tracer.register(cube_e);
-
-	tracer.light(new Light(
-		vec3.fromValues(0.0, 0.0, 20.0),
+	var top = new Light(vec3.fromValues(0.0, 0.0, 20.0),
 		vec3.fromValues(0.5, 0.5, 0.5),
 		vec3.fromValues(0.5, 0.5, 0.5),
-		vec3.fromValues(0.5, 0.5, 0.5)));
-	tracer.light(new Light(
-		vec3.fromValues(20.0, 20.0, 20.0),
-		vec3.fromValues(0.0, 0.0, 0.2),
-		vec3.fromValues(0.0, 0.0, 0.2),
-		vec3.fromValues(0.0, 0.0, 0.2)));
-	tracer.light(new Light(
-		vec3.fromValues(-20.0, 20.0, 20.0),
-		vec3.fromValues(0.0, 0.0, 0.2),
-		vec3.fromValues(0.0, 0.0, 0.2),
-		vec3.fromValues(0.0, 0.0, 0.2)));
-	tracer.light(new Light(
-		vec3.fromValues(20.0, -20.0, 20.0),
-		vec3.fromValues(0.0, 0.0, 0.2),
-		vec3.fromValues(0.0, 0.0, 0.2),
-		vec3.fromValues(0.0, 0.0, 0.2)));
-	tracer.light(new Light(
-		vec3.fromValues(-20.0, -20.0, 20.0),
-		vec3.fromValues(0.0, 0.0, 0.2),
-		vec3.fromValues(0.0, 0.0, 0.2),
-		vec3.fromValues(0.0, 0.0, 0.2)));
+		vec3.fromValues(0.5, 0.5, 0.5));
+	var l_red = new Light(vec3.fromValues(20.0 * Math.cos(4 * Math.PI / 3), 20.0 * Math.sin(4 * Math.PI / 3), 20.0),
+		vec3.fromValues(0.5, 0.0, 0.0),
+		vec3.fromValues(0.5, 0.0, 0.0),
+		vec3.fromValues(0.5, 0.0, 0.0));
+	var l_green = new Light(vec3.fromValues(20.0 * Math.cos(2 * Math.PI / 3), 20.0 * Math.sin(2 * Math.PI / 3), 20.0),
+		vec3.fromValues(0.0, 0.5, 0.0),
+		vec3.fromValues(0.0, 0.5, 0.0),
+		vec3.fromValues(0.0, 0.5, 0.0));
+	var l_blue = new Light(vec3.fromValues(20.0 * Math.cos(0 * Math.PI / 3), 20.0 * Math.sin(0 * Math.PI / 3), 20.0),
+		vec3.fromValues(0.0, 0.0, 0.5),
+		vec3.fromValues(0.0, 0.0, 0.5),
+		vec3.fromValues(0.0, 0.0, 0.5));
+
+	buffers.light(top);
+	buffers.light(l_red);
+	buffers.light(l_green);
+	buffers.light(l_blue);
+	
+	tracer.light(top);
+	tracer.light(l_red);
+	tracer.light(l_green);
+	tracer.light(l_blue);
 };
 
 // FILE SEPARATOR
@@ -8759,6 +8763,16 @@ function grid() {
 		array = array.concat([GRID_INT * i, -GRID_INT * GRID_NUM, 0.0, 0.0, 0.0, 0.0,]);
 	}
 	return array;
+};
+
+// FILE SEPARATOR
+
+function Light(position, ambient, diffuse, specular) {
+	this.o = position;
+	this.a = ambient;
+	this.d = diffuse;
+	this.s = specular;
+	this.on = true;
 };
 
 // FILE SEPARATOR
@@ -8790,7 +8804,7 @@ function main() {
 	camera = init_camera();
 
 	// Geometry
-	scene_a(buffers, tracer);
+	scene_b(buffers, tracer);
 	buffers.populate();
 
 	var flag = true;
@@ -8798,20 +8812,14 @@ function main() {
 	// dat.GUI
 	var panel = {
 		LoadSceneA: function() {
-			buffers.draws = [];
-			buffers.vertices = [];
-			buffers.indices = [];
-			tracer.entities = [];
-			tracer.lights = [];
+			buffers.clear();
+			tracer.clear();
 			scene_a(buffers, tracer);
 			buffers.populate();
 		},
 		LoadSceneB: function() {
-			buffers.draws = [];
-			buffers.vertices = [];
-			buffers.indices = [];
-			tracer.entities = [];
-			tracer.lights = [];
+			buffers.clear();
+			tracer.clear();
 			scene_b(buffers, tracer);
 			buffers.populate();
 		},
@@ -8875,8 +8883,6 @@ function main() {
 	lighting.add(panel, 'Get');
 	lighting.add(panel, 'Update');
 	gui.add(panel, 'Snap');
-
-	gl.useProgram(program_static);
 
 	var last = Date.now();
 
@@ -8957,13 +8963,6 @@ var RED_PLASTIC = new Material(
 	vec3.fromValues(0.7, 0.0, 0.0),
 	4.0);
 
-var CYAN_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.55, 0.55),
-	vec3.fromValues(0.0, 0.7, 0.7),
-	4.0);
-
 var GREEN_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
@@ -8971,10 +8970,10 @@ var GREEN_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.7, 0.0),
 	4.0);
 
-var MAGENTA_PLASTIC = new Material(
+var BLUE_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.55, 0.0, 0.55),
+	vec3.fromValues(0.55, 0.0, 0.0),
 	vec3.fromValues(0.7, 0.0, 0.7),
 	4.0);
 
@@ -9059,14 +9058,6 @@ var _Y = vec3.fromValues(0.0, -1.0, 0.0);
 var Z = vec3.fromValues(0.0, 0.0, 1.0);
 var _Z = vec3.fromValues(0.0, 0.0, -1.0);
 
-function Light(position, ambient, diffuse, specular) {
-	this.o = position;
-	this.a = ambient;
-	this.d = diffuse;
-	this.s = specular;
-	this.on = true;
-}
-
 function Hit(ray, origin, normal, material) {
 	this.o = origin;
 	this.n = normal;
@@ -9096,13 +9087,18 @@ function Tracer(program) {
 	this.lights = [];
 }
 
+Tracer.prototype.clear = function() {
+	this.entities = [];
+	this.lights = [];
+};
+
 Tracer.prototype.register = function(entity) {
 	this.entities.push(entity);
-}
+};
 
 Tracer.prototype.light = function(light) {
 	this.lights.push(light);
-}
+};
 
 Tracer.prototype.propagate = function(pixel, hit, level) {
 	var shadow = vec3.create();

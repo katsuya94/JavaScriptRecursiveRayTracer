@@ -13,14 +13,6 @@ var _Y = vec3.fromValues(0.0, -1.0, 0.0);
 var Z = vec3.fromValues(0.0, 0.0, 1.0);
 var _Z = vec3.fromValues(0.0, 0.0, -1.0);
 
-function Light(position, ambient, diffuse, specular) {
-	this.o = position;
-	this.a = ambient;
-	this.d = diffuse;
-	this.s = specular;
-	this.on = true;
-}
-
 function Hit(ray, origin, normal, material) {
 	this.o = origin;
 	this.n = normal;
@@ -50,13 +42,18 @@ function Tracer(program) {
 	this.lights = [];
 }
 
+Tracer.prototype.clear = function() {
+	this.entities = [];
+	this.lights = [];
+};
+
 Tracer.prototype.register = function(entity) {
 	this.entities.push(entity);
-}
+};
 
 Tracer.prototype.light = function(light) {
 	this.lights.push(light);
-}
+};
 
 Tracer.prototype.propagate = function(pixel, hit, level) {
 	var shadow = vec3.create();

@@ -34,13 +34,6 @@ var RED_PLASTIC = new Material(
 	vec3.fromValues(0.7, 0.0, 0.0),
 	4.0);
 
-var CYAN_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.55, 0.55),
-	vec3.fromValues(0.0, 0.7, 0.7),
-	4.0);
-
 var GREEN_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
@@ -48,10 +41,10 @@ var GREEN_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.7, 0.0),
 	4.0);
 
-var MAGENTA_PLASTIC = new Material(
+var BLUE_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.55, 0.0, 0.55),
+	vec3.fromValues(0.55, 0.0, 0.0),
 	vec3.fromValues(0.7, 0.0, 0.7),
 	4.0);
 

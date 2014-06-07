@@ -26,28 +26,22 @@ function main() {
 	camera = init_camera();
 
 	// Geometry
-	scene_a(buffers, tracer);
+	scene_b(buffers, tracer);
 	buffers.populate();
 
-	var flag = true;
+	snap_flag = true;
 
 	// dat.GUI
 	var panel = {
 		LoadSceneA: function() {
-			buffers.draws = [];
-			buffers.vertices = [];
-			buffers.indices = [];
-			tracer.entities = [];
-			tracer.lights = [];
+			buffers.clear();
+			tracer.clear();
 			scene_a(buffers, tracer);
 			buffers.populate();
 		},
 		LoadSceneB: function() {
-			buffers.draws = [];
-			buffers.vertices = [];
-			buffers.indices = [];
-			tracer.entities = [];
-			tracer.lights = [];
+			buffers.clear();
+			tracer.clear();
 			scene_b(buffers, tracer);
 			buffers.populate();
 		},
@@ -88,7 +82,7 @@ function main() {
 		},
 
 		Snap: function() {
-			flag = true;
+			snap_flag = true;
 		},
 	};
 	var gui = new dat.GUI();
@@ -112,14 +106,12 @@ function main() {
 	lighting.add(panel, 'Update');
 	gui.add(panel, 'Snap');
 
-	gl.useProgram(program_static);
-
 	var last = Date.now();
 
 	var frame = function() {
 		var now	= Date.now();
-		var dt	= (now - last) / 1000.0;
-		last 	= now;
+		var dt = (now - last) / 1000.0;
+		last = now;
 
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
@@ -133,8 +125,8 @@ function main() {
 		camera.update(dt);
 		buffers.draw(camera);
 
-		if (flag) {
-			flag = false;
+		if (snap_flag) {
+			snap_flag = false;
 			panel.Code = tracer.snap(panel.AntiAliasing, panel.Detail, panel.Recursion);
 		}
 
