@@ -8243,96 +8243,6 @@ function init_camera() {
 	camera.qe = [false, false];
 	camera.zx = [false, false];
 
-	window.onkeydown = function(e) {
-		var key = e.keyCode ? e.keyCode : e.which;
-		switch (key) {
-		case 37:
-			camera.dirpad[0] = true;
-			break;
-		case 38:
-			camera.dirpad[1] = true;
-			break;
-		case 39:
-			camera.dirpad[2] = true;
-			break;
-		case 40:
-			camera.dirpad[3] = true;
-			break;
-		case 65:
-			camera.wasd[0] = true;
-			break;
-		case 87:
-			camera.wasd[1] = true;
-			break;
-		case 68:
-			camera.wasd[2] = true;
-			break;
-		case 83:
-			camera.wasd[3] = true;
-			break;
-		case 81:
-			camera.qe[0] = true;
-			break;
-		case 69:
-			camera.qe[1] = true;
-			break;
-		case 90:
-			camera.zx[0] = true;
-			break;
-		case 88:
-			camera.zx[1] = true;
-			break;
-		case 112:
-			document.getElementById('help').style.display = 'block';
-			break;
-		}
-	};
-
-	window.onkeyup = function(e) {
-		var key = e.keyCode ? e.keyCode : e.which;
-		switch(key) {
-		case 37:
-			camera.dirpad[0] = false;
-			break;
-		case 38:
-			camera.dirpad[1] = false;
-			break;
-		case 39:
-			camera.dirpad[2] = false;
-			break;
-		case 40:
-			camera.dirpad[3] = false;
-			break;
-		case 65:
-			camera.wasd[0] = false;
-			break;
-		case 87:
-			camera.wasd[1] = false;
-			break;
-		case 68:
-			camera.wasd[2] = false;
-			break;
-		case 83:
-			camera.wasd[3] = false;
-			break;
-		case 81:
-			camera.qe[0] = false;
-			break;
-		case 69:
-			camera.qe[1] = false;
-			break;
-		case 90:
-			camera.zx[0] = false;
-			break;
-		case 88:
-			camera.zx[1] = false;
-			break;
-		case 112:
-			document.getElementById('help').style.display = 'none';
-			break;
-		}
-	};
-
 	camera.update = function(dt) {
 		var d_pitch = dt * ((camera.dirpad[1] ? 1 : 0) + (camera.dirpad[3] ? -1 : 0));
 		var d_yaw = dt * ((camera.dirpad[0] ? 1 : 0) + (camera.dirpad[2] ? -1 : 0));
@@ -8504,17 +8414,21 @@ function scene_a(buffers, tracer) {
 	tracer.register(sphere_e);
 	buffers.register(sphere_e);
 
-	tracer.light(new Light(
-		vec3.fromValues(20.0, 0.0, 20.0),
+	var warm = new Light(vec3.fromValues(20.0, 0.0, 20.0),
 		vec3.fromValues(0.5, 0.4, 0.3),
 		vec3.fromValues(0.5, 0.4, 0.3),
-		vec3.fromValues(0.5, 0.4, 0.3)));
+		vec3.fromValues(0.5, 0.4, 0.3));
 
-	tracer.light(new Light(
-		vec3.fromValues(-20.0, 0.0, 20.0),
+	var cool = new Light(vec3.fromValues(-20.0, 0.0, 20.0),
 		vec3.fromValues(0.3, 0.4, 0.5),
 		vec3.fromValues(0.3, 0.4, 0.5),
-		vec3.fromValues(0.3, 0.4, 0.5)));
+		vec3.fromValues(0.3, 0.4, 0.5));
+
+	buffers.light(warm);
+	buffers.light(cool);
+
+	tracer.light(warm);
+	tracer.light(cool);
 }
 
 function scene_b(buffers, tracer) {
@@ -8715,9 +8629,9 @@ function scene_b(buffers, tracer) {
 	mat4.rotateX(transform, transform, Math.PI / 4);
 	mat4.scale(transform, transform, [2, 2, 2]);
 
-	var cube_c = new Entity(draw_cube, transform, cube, blue_hit);
-	buffers.register(cube_c);
-	tracer.register(cube_c);
+	var cube_d = new Entity(draw_cube, transform, cube, blue_hit);
+	buffers.register(cube_d);
+	tracer.register(cube_d);
 
 	var top = new Light(vec3.fromValues(0.0, 0.0, 20.0),
 		vec3.fromValues(0.5, 0.5, 0.5),
@@ -8727,11 +8641,11 @@ function scene_b(buffers, tracer) {
 		vec3.fromValues(0.5, 0.0, 0.0),
 		vec3.fromValues(0.5, 0.0, 0.0),
 		vec3.fromValues(0.5, 0.0, 0.0));
-	var l_green = new Light(vec3.fromValues(20.0 * Math.cos(2 * Math.PI / 3), 20.0 * Math.sin(2 * Math.PI / 3), 20.0),
+	var l_green = new Light(vec3.fromValues(20.0 * Math.cos(6 * Math.PI / 3), 20.0 * Math.sin(6 * Math.PI / 3), 20.0),
 		vec3.fromValues(0.0, 0.5, 0.0),
 		vec3.fromValues(0.0, 0.5, 0.0),
 		vec3.fromValues(0.0, 0.5, 0.0));
-	var l_blue = new Light(vec3.fromValues(20.0 * Math.cos(0 * Math.PI / 3), 20.0 * Math.sin(0 * Math.PI / 3), 20.0),
+	var l_blue = new Light(vec3.fromValues(20.0 * Math.cos(2 * Math.PI / 3), 20.0 * Math.sin(2 * Math.PI / 3), 20.0),
 		vec3.fromValues(0.0, 0.0, 0.5),
 		vec3.fromValues(0.0, 0.0, 0.5),
 		vec3.fromValues(0.0, 0.0, 0.5));
@@ -8740,7 +8654,7 @@ function scene_b(buffers, tracer) {
 	buffers.light(l_red);
 	buffers.light(l_green);
 	buffers.light(l_blue);
-	
+
 	tracer.light(top);
 	tracer.light(l_red);
 	tracer.light(l_green);
@@ -8764,6 +8678,101 @@ function grid() {
 	}
 	return array;
 };
+
+// FILE SEPARATOR
+
+window.onkeydown = function(e) {
+		var key = e.keyCode ? e.keyCode : e.which;
+		switch (key) {
+		case 37:
+			camera.dirpad[0] = true;
+			break;
+		case 38:
+			camera.dirpad[1] = true;
+			break;
+		case 39:
+			camera.dirpad[2] = true;
+			break;
+		case 40:
+			camera.dirpad[3] = true;
+			break;
+		case 65:
+			camera.wasd[0] = true;
+			break;
+		case 87:
+			camera.wasd[1] = true;
+			break;
+		case 68:
+			camera.wasd[2] = true;
+			break;
+		case 83:
+			camera.wasd[3] = true;
+			break;
+		case 81:
+			camera.qe[0] = true;
+			break;
+		case 69:
+			camera.qe[1] = true;
+			break;
+		case 90:
+			camera.zx[0] = true;
+			break;
+		case 88:
+			camera.zx[1] = true;
+			break;
+		case 112:
+			document.getElementById('help').style.display = 'block';
+			break;
+		case 32:
+			snap_flag = true;
+			break;
+		}
+	};
+
+	window.onkeyup = function(e) {
+		var key = e.keyCode ? e.keyCode : e.which;
+		switch(key) {
+		case 37:
+			camera.dirpad[0] = false;
+			break;
+		case 38:
+			camera.dirpad[1] = false;
+			break;
+		case 39:
+			camera.dirpad[2] = false;
+			break;
+		case 40:
+			camera.dirpad[3] = false;
+			break;
+		case 65:
+			camera.wasd[0] = false;
+			break;
+		case 87:
+			camera.wasd[1] = false;
+			break;
+		case 68:
+			camera.wasd[2] = false;
+			break;
+		case 83:
+			camera.wasd[3] = false;
+			break;
+		case 81:
+			camera.qe[0] = false;
+			break;
+		case 69:
+			camera.qe[1] = false;
+			break;
+		case 90:
+			camera.zx[0] = false;
+			break;
+		case 88:
+			camera.zx[1] = false;
+			break;
+		case 112:
+			document.getElementById('help').style.display = 'none';
+			break;
+		}
+	};;
 
 // FILE SEPARATOR
 
@@ -8807,7 +8816,7 @@ function main() {
 	scene_b(buffers, tracer);
 	buffers.populate();
 
-	var flag = true;
+	snap_flag = true;
 
 	// dat.GUI
 	var panel = {
@@ -8860,7 +8869,7 @@ function main() {
 		},
 
 		Snap: function() {
-			flag = true;
+			snap_flag = true;
 		},
 	};
 	var gui = new dat.GUI();
@@ -8888,8 +8897,8 @@ function main() {
 
 	var frame = function() {
 		var now	= Date.now();
-		var dt	= (now - last) / 1000.0;
-		last 	= now;
+		var dt = (now - last) / 1000.0;
+		last = now;
 
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
@@ -8903,8 +8912,8 @@ function main() {
 		camera.update(dt);
 		buffers.draw(camera);
 
-		if (flag) {
-			flag = false;
+		if (snap_flag) {
+			snap_flag = false;
 			panel.Code = tracer.snap(panel.AntiAliasing, panel.Detail, panel.Recursion);
 		}
 
@@ -8927,8 +8936,7 @@ function main() {
 
 // FILE SEPARATOR
 
-function Material(emissive, ambient, diffuse, specular, alpha) {
-	this.e = emissive;
+function Material(ambient, diffuse, specular, alpha) {
 	this.a = ambient;
 	this.d = diffuse;
 	this.s = specular;
@@ -8936,7 +8944,6 @@ function Material(emissive, ambient, diffuse, specular, alpha) {
 }
 
 var PEWTER = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.105882, 0.058824, 0.113725),
 	vec3.fromValues(0.333333, 0.333333, 0.521569),
 	vec3.fromValues(0.427451, 0.470588, 0.541176),
@@ -8944,13 +8951,11 @@ var PEWTER = new Material(
 
 var BLACK_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.01, 0.01, 0.01),
 	vec3.fromValues(0.5, 0.5, 0.5),
 	4.0);
 
 var WHITE_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.55, 0.55, 0.55),
 	vec3.fromValues(0.7, 0.7, 0.7),
@@ -8958,13 +8963,11 @@ var WHITE_PLASTIC = new Material(
 
 var RED_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.55, 0.0, 0.0),
 	vec3.fromValues(0.7, 0.0, 0.0),
 	4.0);
 
 var GREEN_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.55, 0.0),
 	vec3.fromValues(0.0, 0.7, 0.0),
@@ -8972,13 +8975,11 @@ var GREEN_PLASTIC = new Material(
 
 var BLUE_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.55, 0.0, 0.0),
+	vec3.fromValues(0.0, 0.0, 0.55),
 	vec3.fromValues(0.7, 0.0, 0.7),
 	4.0);
 
 var METAL = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(1.0, 1.0, 1.0),

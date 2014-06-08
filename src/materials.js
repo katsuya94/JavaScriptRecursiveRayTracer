@@ -1,5 +1,4 @@
-function Material(emissive, ambient, diffuse, specular, alpha) {
-	this.e = emissive;
+function Material(ambient, diffuse, specular, alpha) {
 	this.a = ambient;
 	this.d = diffuse;
 	this.s = specular;
@@ -7,7 +6,6 @@ function Material(emissive, ambient, diffuse, specular, alpha) {
 }
 
 var PEWTER = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.105882, 0.058824, 0.113725),
 	vec3.fromValues(0.333333, 0.333333, 0.521569),
 	vec3.fromValues(0.427451, 0.470588, 0.541176),
@@ -15,13 +13,11 @@ var PEWTER = new Material(
 
 var BLACK_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.01, 0.01, 0.01),
 	vec3.fromValues(0.5, 0.5, 0.5),
 	4.0);
 
 var WHITE_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.55, 0.55, 0.55),
 	vec3.fromValues(0.7, 0.7, 0.7),
@@ -29,13 +25,11 @@ var WHITE_PLASTIC = new Material(
 
 var RED_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.55, 0.0, 0.0),
 	vec3.fromValues(0.7, 0.0, 0.0),
 	4.0);
 
 var GREEN_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.55, 0.0),
 	vec3.fromValues(0.0, 0.7, 0.0),
@@ -43,13 +37,11 @@ var GREEN_PLASTIC = new Material(
 
 var BLUE_PLASTIC = new Material(
 	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.55, 0.0, 0.0),
+	vec3.fromValues(0.0, 0.0, 0.55),
 	vec3.fromValues(0.7, 0.0, 0.7),
 	4.0);
 
 var METAL = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(0.0, 0.0, 0.0),
 	vec3.fromValues(1.0, 1.0, 1.0),

@@ -101,17 +101,21 @@ function scene_a(buffers, tracer) {
 	tracer.register(sphere_e);
 	buffers.register(sphere_e);
 
-	tracer.light(new Light(
-		vec3.fromValues(20.0, 0.0, 20.0),
+	var warm = new Light(vec3.fromValues(20.0, 0.0, 20.0),
 		vec3.fromValues(0.5, 0.4, 0.3),
 		vec3.fromValues(0.5, 0.4, 0.3),
-		vec3.fromValues(0.5, 0.4, 0.3)));
+		vec3.fromValues(0.5, 0.4, 0.3));
 
-	tracer.light(new Light(
-		vec3.fromValues(-20.0, 0.0, 20.0),
+	var cool = new Light(vec3.fromValues(-20.0, 0.0, 20.0),
 		vec3.fromValues(0.3, 0.4, 0.5),
 		vec3.fromValues(0.3, 0.4, 0.5),
-		vec3.fromValues(0.3, 0.4, 0.5)));
+		vec3.fromValues(0.3, 0.4, 0.5));
+
+	buffers.light(warm);
+	buffers.light(cool);
+
+	tracer.light(warm);
+	tracer.light(cool);
 }
 
 function scene_b(buffers, tracer) {
@@ -312,9 +316,9 @@ function scene_b(buffers, tracer) {
 	mat4.rotateX(transform, transform, Math.PI / 4);
 	mat4.scale(transform, transform, [2, 2, 2]);
 
-	var cube_c = new Entity(draw_cube, transform, cube, blue_hit);
-	buffers.register(cube_c);
-	tracer.register(cube_c);
+	var cube_d = new Entity(draw_cube, transform, cube, blue_hit);
+	buffers.register(cube_d);
+	tracer.register(cube_d);
 
 	var top = new Light(vec3.fromValues(0.0, 0.0, 20.0),
 		vec3.fromValues(0.5, 0.5, 0.5),
@@ -324,11 +328,11 @@ function scene_b(buffers, tracer) {
 		vec3.fromValues(0.5, 0.0, 0.0),
 		vec3.fromValues(0.5, 0.0, 0.0),
 		vec3.fromValues(0.5, 0.0, 0.0));
-	var l_green = new Light(vec3.fromValues(20.0 * Math.cos(2 * Math.PI / 3), 20.0 * Math.sin(2 * Math.PI / 3), 20.0),
+	var l_green = new Light(vec3.fromValues(20.0 * Math.cos(6 * Math.PI / 3), 20.0 * Math.sin(6 * Math.PI / 3), 20.0),
 		vec3.fromValues(0.0, 0.5, 0.0),
 		vec3.fromValues(0.0, 0.5, 0.0),
 		vec3.fromValues(0.0, 0.5, 0.0));
-	var l_blue = new Light(vec3.fromValues(20.0 * Math.cos(0 * Math.PI / 3), 20.0 * Math.sin(0 * Math.PI / 3), 20.0),
+	var l_blue = new Light(vec3.fromValues(20.0 * Math.cos(2 * Math.PI / 3), 20.0 * Math.sin(2 * Math.PI / 3), 20.0),
 		vec3.fromValues(0.0, 0.0, 0.5),
 		vec3.fromValues(0.0, 0.0, 0.5),
 		vec3.fromValues(0.0, 0.0, 0.5));
@@ -337,7 +341,7 @@ function scene_b(buffers, tracer) {
 	buffers.light(l_red);
 	buffers.light(l_green);
 	buffers.light(l_blue);
-	
+
 	tracer.light(top);
 	tracer.light(l_red);
 	tracer.light(l_green);
