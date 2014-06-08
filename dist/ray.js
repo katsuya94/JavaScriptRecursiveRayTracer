@@ -8122,6 +8122,8 @@ function Buffers(program) {
 	this.u_model = gl.getUniformLocation(program, 'u_model');
 	this.u_inverse_transpose_model = gl.getUniformLocation(program, 'u_inverse_transpose_model');
 
+	this.u_camera_position = gl.getUniformLocation(program, 'u_camera_position');
+
 	this.u_lights = [
 		{
 			o: gl.getUniformLocation(program, 'u_a_position'),
@@ -8152,10 +8154,13 @@ function Buffers(program) {
 	this.u_material = {
 		a: gl.getUniformLocation(program, 'u_ambient'),
 		d: gl.getUniformLocation(program, 'u_diffuse'),
-		s: gl.getUniformLocation(program, 'u_specular')
+		s: gl.getUniformLocation(program, 'u_specular'),
+		alpha: gl.getUniformLocation(program, 'u_alpha')
 	}
 
 	this.u_state = gl.getUniformLocation(program, 'u_state');
+
+	this.u_mode = gl.getUniformLocation(program, 'u_mode');
 
 	this.entities = [];
 
@@ -8233,12 +8238,18 @@ Buffers.prototype.elementDraw = function(vertices, indices, md) {
 };
 
 Buffers.prototype.draw = function() {
+	gl.uniform3fv(this.u_camera_position, camera.position);
 	for (var i = 0; i < this.entities.length; i++) {
 		var e = this.entities[i];
 		mat4.multiply(this.mvp, camera.vp, e.model);
 		gl.uniformMatrix4fv(this.u_mvp, false, this.mvp);
 		gl.uniformMatrix4fv(this.u_model, false, e.model);
 		gl.uniformMatrix4fv(this.u_inverse_transpose_model, false, e.inverse_transpose_model);
+		gl.uniform3fv(this.u_material.a, e.material.a);
+		gl.uniform3fv(this.u_material.d, e.material.d);
+		gl.uniform3fv(this.u_material.s, e.material.s);
+		gl.uniform1f(this.u_material.alpha, e.material.alpha);
+		gl.uniform1i(this.u_mode, e.mode);
 		if (e.draw.elements) {
 			gl.drawElements(e.draw.mode, e.draw.count, gl.UNSIGNED_SHORT, e.draw.offset * ESIZE);
 		} else {
@@ -8343,7 +8354,7 @@ var T_2 = Math.tan(FOV / 2);;
 
 /* exported Entity */
 
-function Entity(draw, model, col, hit) {
+function Entity(draw, model, col, hit, material, mode) {
 	this.draw = draw;
 	this.model = model;
 
@@ -8358,9 +8369,17 @@ function Entity(draw, model, col, hit) {
 
 	this.col = col;
 	this.hit = hit;
+
+	this.material = material;
+	this.mode = mode;
 };
 
 // FILE SEPARATOR
+
+function floor_col(ray) {
+	var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
+	return t > 0 ? { t: t } : null;
+}
 
 function floor_hit(ray, col) {
 	var origin = param_ray(ray, col.t);
@@ -8368,27 +8387,9 @@ function floor_hit(ray, col) {
 	return new Hit(ray, origin, Z, m)
 }
 
-function floor_col(ray) {
-	var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
-	return t > 0 ? { t: t } : null;
-}
-
 function scene_a(buffers, tracer) {
-	var draw_axes = buffers.arrayDraw([
-		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-		1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-
-		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-		0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-
-		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-		0.0, 0.0, 1.0, 0.0, 0.0, 0.0
-	], 'LINES');
-	var axes = new Entity(draw_axes, mat4.create(), undefined, undefined);
-	buffers.register(axes)
-
-	var draw_grid = buffers.arrayDraw(grid(), 'LINES');
-	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit);
+	var draw_grid = buffers.arrayDraw(grid(), 'TRIANGLE_STRIP');
+	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit, WHITE_PLASTIC, 1);
 	buffers.register(floor);
 	tracer.register(floor);
 
@@ -8434,7 +8435,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [0, 0, 2]);
 	mat4.scale(transform, transform, [2, 2, 2]);
 
-	var sphere_a = new Entity(draw_sphere, transform, sphere, metal);
+	var sphere_a = new Entity(draw_sphere, transform, sphere, metal, METAL, 0);
 	tracer.register(sphere_a);
 	buffers.register(sphere_a);
 
@@ -8442,7 +8443,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [-2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_b = new Entity(draw_sphere, transform, sphere, light_metal);
+	var sphere_b = new Entity(draw_sphere, transform, sphere, light_metal, LIGHT_METAL, 0);
 	tracer.register(sphere_b);
 	buffers.register(sphere_b);
 
@@ -8450,7 +8451,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_c = new Entity(draw_sphere, transform, sphere, light_metal);
+	var sphere_c = new Entity(draw_sphere, transform, sphere, light_metal, LIGHT_METAL, 0);
 	tracer.register(sphere_c);
 	buffers.register(sphere_c);
 
@@ -8458,7 +8459,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [0, -2.5, 2]);
 	mat4.scale(transform, transform, [2, 0.5, 2]);
 
-	var sphere_d = new Entity(draw_sphere, transform, sphere, metal);
+	var sphere_d = new Entity(draw_sphere, transform, sphere, metal, METAL, 0);
 	tracer.register(sphere_d);
 	buffers.register(sphere_d);
 
@@ -8466,7 +8467,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [0, 2.5, 2]);
 	mat4.scale(transform, transform, [2, 0.5, 2]);
 
-	var sphere_e = new Entity(draw_sphere, transform, sphere, metal);
+	var sphere_e = new Entity(draw_sphere, transform, sphere, metal, METAL, 0);
 	tracer.register(sphere_e);
 	buffers.register(sphere_e);
 
@@ -8480,6 +8481,8 @@ function scene_a(buffers, tracer) {
 		vec3.fromValues(0.3, 0.4, 0.5),
 		vec3.fromValues(0.3, 0.4, 0.5));
 
+	cool.on = false;
+
 	buffers.light(warm);
 	buffers.light(cool);
 
@@ -8488,21 +8491,8 @@ function scene_a(buffers, tracer) {
 }
 
 function scene_b(buffers, tracer) {
-	var draw_axes = buffers.arrayDraw([
-		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-		1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-
-		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-		0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-
-		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-		0.0, 0.0, 1.0, 0.0, 0.0, 0.0
-	], 'LINES');
-	var axes = new Entity(draw_axes, mat4.create(), undefined, undefined);
-	buffers.register(axes)
-
-	var draw_grid = buffers.arrayDraw(grid(), 'LINES');
-	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit);
+	var draw_grid = buffers.arrayDraw(grid(), 'TRIANGLE_STRIP');
+	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit, WHITE_PLASTIC, 1);
 	buffers.register(floor);
 	tracer.register(floor);
 
@@ -8607,7 +8597,7 @@ function scene_b(buffers, tracer) {
 
 	var draw_cube = buffers.arrayDraw(box(), 'TRIANGLES');
 
-	var cube_a = new Entity(draw_cube, transform, bump_cube, bump_hit);
+	var cube_a = new Entity(draw_cube, transform, bump_cube, bump_hit, PEWTER, 0);
 	buffers.register(cube_a);
 	tracer.register(cube_a);
 
@@ -8646,17 +8636,17 @@ function scene_b(buffers, tracer) {
 
 	function red_hit(ray, col) {
 		var origin = param_ray(ray, col.t);
-		return new Hit(ray, origin, col.normal, RED_PLASTIC);
+		return new Hit(ray, origin, col.normal, RED_PLASTIC, 0);
 	}
 
 	function green_hit(ray, col) {
 		var origin = param_ray(ray, col.t);
-		return new Hit(ray, origin, col.normal, GREEN_PLASTIC);
+		return new Hit(ray, origin, col.normal, GREEN_PLASTIC, 0);
 	}
 
 	function blue_hit(ray, col) {
 		var origin = param_ray(ray, col.t);
-		return new Hit(ray, origin, col.normal, BLUE_PLASTIC);
+		return new Hit(ray, origin, col.normal, BLUE_PLASTIC, 0);
 	}
 
 	transform = mat4.create();
@@ -8665,7 +8655,7 @@ function scene_b(buffers, tracer) {
 	mat4.rotateX(transform, transform, Math.PI / 4);
 	mat4.scale(transform, transform, [2, 2, 2]);
 
-	var cube_b = new Entity(draw_cube, transform, cube, red_hit);
+	var cube_b = new Entity(draw_cube, transform, cube, red_hit, RED_PLASTIC);
 	buffers.register(cube_b);
 	tracer.register(cube_b);
 
@@ -8675,7 +8665,7 @@ function scene_b(buffers, tracer) {
 	mat4.rotateX(transform, transform, Math.PI / 4);
 	mat4.scale(transform, transform, [2, 2, 2]);
 
-	var cube_c = new Entity(draw_cube, transform, cube, green_hit);
+	var cube_c = new Entity(draw_cube, transform, cube, green_hit, GREEN_PLASTIC);
 	buffers.register(cube_c);
 	tracer.register(cube_c);
 
@@ -8685,7 +8675,7 @@ function scene_b(buffers, tracer) {
 	mat4.rotateX(transform, transform, Math.PI / 4);
 	mat4.scale(transform, transform, [2, 2, 2]);
 
-	var cube_d = new Entity(draw_cube, transform, cube, blue_hit);
+	var cube_d = new Entity(draw_cube, transform, cube, blue_hit, BLUE_PLASTIC);
 	buffers.register(cube_d);
 	tracer.register(cube_d);
 
@@ -8721,17 +8711,15 @@ function scene_b(buffers, tracer) {
 
 /* exported grid */
 
-var GRID_NUM = 500;
-var GRID_INT = 1.0;
+var GRID_SIZE = 500;
 
 function grid() {
-	var array = [];
-	for(var i = -GRID_NUM; i <= GRID_NUM; i++) {
-		array = array.concat([GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.0, 0.0, 0.0,]);
-		array = array.concat([-GRID_INT * GRID_NUM, GRID_INT * i, 0.0, 0.0, 0.0, 0.0,]);
-		array = array.concat([GRID_INT * i, GRID_INT * GRID_NUM, 0.0, 0.0, 0.0, 0.0,]);
-		array = array.concat([GRID_INT * i, -GRID_INT * GRID_NUM, 0.0, 0.0, 0.0, 0.0,]);
-	}
+	var array = [
+		GRID_SIZE, GRID_SIZE, 0.0, 0.0, 0.0, 1.0,
+		GRID_SIZE, -GRID_SIZE, 0.0, 0.0, 0.0, 1.0,
+		-GRID_SIZE, GRID_SIZE, 0.0, 0.0, 0.0, 1.0,
+		-GRID_SIZE, -GRID_SIZE, 0.0, 0.0, 0.0, 1.0,
+	];
 	return array;
 };
 
@@ -8882,12 +8870,14 @@ function main() {
 			tracer.clear();
 			scene_a(buffers, tracer);
 			buffers.populate();
+			light_flag = true;
 		},
 		LoadSceneB: function() {
 			buffers.clear();
 			tracer.clear();
 			scene_b(buffers, tracer);
 			buffers.populate();
+			light_flag = true;
 		},
 
 		AntiAliasing: 0,
@@ -8923,7 +8913,7 @@ function main() {
 				l.o[2] = parseFloat(panel.Z);
 				l.on = panel.On;
 			}
-			buffers.updateLights();
+			light_flag = true;
 		},
 
 		Snap: function() {
@@ -9060,7 +9050,7 @@ var LIGHT_METAL = new Material(
 
 // From JTPointPhongSphere_PerFragment.js
 function sphere_mesh() {
-	var SPHERE_DIV = 17;
+	var SPHERE_DIV = 51;
 
 	var i, ai, si, ci;
 	var j, aj, sj, cj;
@@ -9201,9 +9191,8 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 		vec3.normalize(shadow, shadow);
 
 		var lambertian = vec3.dot(hit.n, shadow);
-
-		if (lambertian > 0 && !this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), d, hit.id)) {
-			vec3.scaleAndAdd(diffuse, diffuse, l.d, lambertian);
+		if (lambertian > 0 && !this.blocks(new Ray(hit.o, shadow), d, hit.id)) {
+			vec3.scaleAndAdd(diffuse, diffuse, l.d, vec3.dot(hit.n, shadow));
 			vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
 		}
 	}

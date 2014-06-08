@@ -10,8 +10,8 @@ function floor_hit(ray, col) {
 }
 
 function scene_a(buffers, tracer) {
-	var draw_grid = buffers.arrayDraw(grid(), 'LINES');
-	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit, BLACK_PLASTIC);
+	var draw_grid = buffers.arrayDraw(grid(), 'TRIANGLE_STRIP');
+	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit, WHITE_PLASTIC, 1);
 	buffers.register(floor);
 	tracer.register(floor);
 
@@ -57,7 +57,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [0, 0, 2]);
 	mat4.scale(transform, transform, [2, 2, 2]);
 
-	var sphere_a = new Entity(draw_sphere, transform, sphere, metal, METAL);
+	var sphere_a = new Entity(draw_sphere, transform, sphere, metal, METAL, 0);
 	tracer.register(sphere_a);
 	buffers.register(sphere_a);
 
@@ -65,7 +65,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [-2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_b = new Entity(draw_sphere, transform, sphere, light_metal, LIGHT_METAL);
+	var sphere_b = new Entity(draw_sphere, transform, sphere, light_metal, LIGHT_METAL, 0);
 	tracer.register(sphere_b);
 	buffers.register(sphere_b);
 
@@ -73,7 +73,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_c = new Entity(draw_sphere, transform, sphere, light_metal, LIGHT_METAL);
+	var sphere_c = new Entity(draw_sphere, transform, sphere, light_metal, LIGHT_METAL, 0);
 	tracer.register(sphere_c);
 	buffers.register(sphere_c);
 
@@ -81,7 +81,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [0, -2.5, 2]);
 	mat4.scale(transform, transform, [2, 0.5, 2]);
 
-	var sphere_d = new Entity(draw_sphere, transform, sphere, metal, METAL);
+	var sphere_d = new Entity(draw_sphere, transform, sphere, metal, METAL, 0);
 	tracer.register(sphere_d);
 	buffers.register(sphere_d);
 
@@ -89,7 +89,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [0, 2.5, 2]);
 	mat4.scale(transform, transform, [2, 0.5, 2]);
 
-	var sphere_e = new Entity(draw_sphere, transform, sphere, metal, METAL);
+	var sphere_e = new Entity(draw_sphere, transform, sphere, metal, METAL, 0);
 	tracer.register(sphere_e);
 	buffers.register(sphere_e);
 
@@ -103,6 +103,8 @@ function scene_a(buffers, tracer) {
 		vec3.fromValues(0.3, 0.4, 0.5),
 		vec3.fromValues(0.3, 0.4, 0.5));
 
+	cool.on = false;
+
 	buffers.light(warm);
 	buffers.light(cool);
 
@@ -111,8 +113,8 @@ function scene_a(buffers, tracer) {
 }
 
 function scene_b(buffers, tracer) {
-	var draw_grid = buffers.arrayDraw(grid(), 'LINES');
-	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit, BLACK_PLASTIC);
+	var draw_grid = buffers.arrayDraw(grid(), 'TRIANGLE_STRIP');
+	var floor = new Entity(draw_grid, mat4.create(), floor_col, floor_hit, WHITE_PLASTIC, 1);
 	buffers.register(floor);
 	tracer.register(floor);
 
@@ -217,7 +219,7 @@ function scene_b(buffers, tracer) {
 
 	var draw_cube = buffers.arrayDraw(box(), 'TRIANGLES');
 
-	var cube_a = new Entity(draw_cube, transform, bump_cube, bump_hit, PEWTER);
+	var cube_a = new Entity(draw_cube, transform, bump_cube, bump_hit, PEWTER, 0);
 	buffers.register(cube_a);
 	tracer.register(cube_a);
 
@@ -256,17 +258,17 @@ function scene_b(buffers, tracer) {
 
 	function red_hit(ray, col) {
 		var origin = param_ray(ray, col.t);
-		return new Hit(ray, origin, col.normal, RED_PLASTIC);
+		return new Hit(ray, origin, col.normal, RED_PLASTIC, 0);
 	}
 
 	function green_hit(ray, col) {
 		var origin = param_ray(ray, col.t);
-		return new Hit(ray, origin, col.normal, GREEN_PLASTIC);
+		return new Hit(ray, origin, col.normal, GREEN_PLASTIC, 0);
 	}
 
 	function blue_hit(ray, col) {
 		var origin = param_ray(ray, col.t);
-		return new Hit(ray, origin, col.normal, BLUE_PLASTIC);
+		return new Hit(ray, origin, col.normal, BLUE_PLASTIC, 0);
 	}
 
 	transform = mat4.create();

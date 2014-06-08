@@ -39,12 +39,14 @@ function main() {
 			tracer.clear();
 			scene_a(buffers, tracer);
 			buffers.populate();
+			light_flag = true;
 		},
 		LoadSceneB: function() {
 			buffers.clear();
 			tracer.clear();
 			scene_b(buffers, tracer);
 			buffers.populate();
+			light_flag = true;
 		},
 
 		AntiAliasing: 0,
@@ -80,7 +82,7 @@ function main() {
 				l.o[2] = parseFloat(panel.Z);
 				l.on = panel.On;
 			}
-			buffers.updateLights();
+			light_flag = true;
 		},
 
 		Snap: function() {

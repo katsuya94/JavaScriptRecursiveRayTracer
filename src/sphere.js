@@ -3,7 +3,7 @@
 
 // From JTPointPhongSphere_PerFragment.js
 function sphere_mesh() {
-	var SPHERE_DIV = 17;
+	var SPHERE_DIV = 51;
 
 	var i, ai, si, ci;
 	var j, aj, sj, cj;

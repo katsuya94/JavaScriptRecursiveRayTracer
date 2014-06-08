@@ -86,9 +86,8 @@ Tracer.prototype.propagate = function(pixel, hit, level) {
 		vec3.normalize(shadow, shadow);
 
 		var lambertian = vec3.dot(hit.n, shadow);
-
-		if (lambertian > 0 && !this.blocks(new Ray(vec3.clone(hit.o), vec3.clone(shadow)), d, hit.id)) {
-			vec3.scaleAndAdd(diffuse, diffuse, l.d, lambertian);
+		if (lambertian > 0 && !this.blocks(new Ray(hit.o, shadow), d, hit.id)) {
+			vec3.scaleAndAdd(diffuse, diffuse, l.d, vec3.dot(hit.n, shadow));
 			vec3.scaleAndAdd(specular, specular, l.s, Math.pow(Math.max(0, vec3.dot(reflection, shadow)), hit.mat.alpha));
 		}
 	}
