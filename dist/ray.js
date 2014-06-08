@@ -8481,8 +8481,6 @@ function scene_a(buffers, tracer) {
 		vec3.fromValues(0.3, 0.4, 0.5),
 		vec3.fromValues(0.3, 0.4, 0.5));
 
-	cool.on = false;
-
 	buffers.light(warm);
 	buffers.light(cool);
 

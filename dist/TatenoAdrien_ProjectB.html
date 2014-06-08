@@ -11,17 +11,12 @@ uniform mat4 u_mvp;
 uniform mat4 u_model;
 uniform mat4 u_inverse_transpose_model;
 
-uniform vec3 u_camera_position;
-
 varying vec3 v_position;
 varying vec3 v_normal;
-varying vec3 v_reflection;
 
 void main() {
 	v_position = (u_model * a_position).xyz;
 	v_normal = normalize((u_inverse_transpose_model * a_normal).xyz);
-	vec3 incident = normalize(v_position.xyz - u_camera_position);
-	v_reflection = incident - 2.0 * v_normal * dot(v_normal, incident);
 	gl_Position = u_mvp * a_position;
 }
 
@@ -71,6 +66,8 @@ uniform vec3 u_d_specular;
 
 uniform int u_state;
 
+uniform vec3 u_camera_position;
+
 uniform int u_mode;
 
 uniform vec3 u_ambient;
@@ -80,7 +77,6 @@ uniform float u_alpha;
 
 varying vec3 v_position;
 varying vec3 v_normal;
-varying vec3 v_reflection;
 
 vec3 normal;
 vec3 reflection;
@@ -97,7 +93,8 @@ vec3 calculate(vec3 position, vec3 ambient, vec3 diffuse, vec3 specular, Materia
 
 void main() {
 	normal = normalize(v_normal);
-	reflection = normalize(v_reflection);
+	vec3 incident = normalize(v_position - u_camera_position);
+	reflection = incident - 2.0 * normal * dot(v_normal, incident);
 
 	Material material = Material(u_ambient, u_diffuse, u_specular, u_alpha);
 
@@ -172,6 +169,32 @@ void main() {
 					<li>E - Roll CW</li>
 					<li>Arrow Keys - Look Around</li>
 				</ul>
+				<p>
+					Every time an image is Snapped a code is saved under the Camera tab in the control panel. If a valid code is entered into the box and UseCode is clicked. The camera will jump to the position represented by that code.
+				</p> 
+			</li>
+			<li>
+				Snapping Images
+				<p>
+					Click Snap in the control panel or press space to render with the current configuration. Note that this may take time depending on the settings.
+				</p>
+				<ul>
+					<li>AntiAliasing - Solves the issue of jagged edges at a huge performance cost</li>
+					<li>Detail - 0 is the full resolution of the window, values below that will render at lower resolutions</li>
+					<li>Recursion - The number of times, the light ray reflects.
+				</ul>
+			</li>
+			<li>
+				Lighting Controls
+				<p>
+					In the Lighting tab of the control panel, enter a light ID (0 - 3) and click get. The properties of the light should appear. After making adjustments, click update to update the light.
+				</p>
+			</li>
+			<li>
+				Loading Scenes
+				<p>
+					To load a scene, click LoadSceneA or LoadSceneB under the Scenes tab in the control panel. Note that while the WebGL preview will update automatically, the ray traced image will not update until another image is Snapped.
+				</p>
 			</li>
 		</ul>
 	</div>
