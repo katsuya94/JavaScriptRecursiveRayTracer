@@ -11,6 +11,43 @@ function Buffers(program) {
 	this.a_normal = gl.getAttribLocation(program, 'a_normal');
 
 	this.u_mvp = gl.getUniformLocation(program, 'u_mvp');
+	this.u_model = gl.getUniformLocation(program, 'u_model');
+	this.u_inverse_transpose_model = gl.getUniformLocation(program, 'u_inverse_transpose_model');
+
+	this.u_lights = [
+		{
+			o: gl.getUniformLocation(program, 'u_a_position'),
+			a: gl.getUniformLocation(program, 'u_a_ambient'),
+			d: gl.getUniformLocation(program, 'u_a_diffuse'),
+			s: gl.getUniformLocation(program, 'u_a_specular')
+		},
+		{
+			o: gl.getUniformLocation(program, 'u_b_position'),
+			a: gl.getUniformLocation(program, 'u_b_ambient'),
+			d: gl.getUniformLocation(program, 'u_b_diffuse'),
+			s: gl.getUniformLocation(program, 'u_b_specular')
+		},
+		{
+			o: gl.getUniformLocation(program, 'u_c_position'),
+			a: gl.getUniformLocation(program, 'u_c_ambient'),
+			d: gl.getUniformLocation(program, 'u_c_diffuse'),
+			s: gl.getUniformLocation(program, 'u_c_specular')
+		},
+		{
+			o: gl.getUniformLocation(program, 'u_d_position'),
+			a: gl.getUniformLocation(program, 'u_d_ambient'),
+			d: gl.getUniformLocation(program, 'u_d_diffuse'),
+			s: gl.getUniformLocation(program, 'u_d_specular')
+		}
+	];
+
+	this.u_material = {
+		a: gl.getUniformLocation(program, 'u_ambient'),
+		d: gl.getUniformLocation(program, 'u_diffuse'),
+		s: gl.getUniformLocation(program, 'u_specular')
+	}
+
+	this.u_state = gl.getUniformLocation(program, 'u_state');
 
 	this.entities = [];
 
@@ -35,6 +72,18 @@ Buffers.prototype.register = function(entity) {
 
 Buffers.prototype.light = function(light) {
 	this.lights.push(light);
+};
+
+Buffers.prototype.updateLights = function() {
+	var state = 0;
+	for (var i = 0; i < this.u_lights.length && i < this.lights.length; i++) {
+		gl.uniform3fv(this.u_lights[i].o, this.lights[i].o);
+		gl.uniform3fv(this.u_lights[i].a, this.lights[i].a);
+		gl.uniform3fv(this.u_lights[i].d, this.lights[i].d);
+		gl.uniform3fv(this.u_lights[i].s, this.lights[i].s);
+		if(this.lights[i].on) state = state | (1 << i);
+	}
+	gl.uniform1i(this.u_state, state);
 }
 
 Buffers.prototype.arrayDraw = function(vertices, md) {
@@ -75,11 +124,13 @@ Buffers.prototype.elementDraw = function(vertices, indices, md) {
 	};
 };
 
-Buffers.prototype.draw = function(camera) {
+Buffers.prototype.draw = function() {
 	for (var i = 0; i < this.entities.length; i++) {
 		var e = this.entities[i];
 		mat4.multiply(this.mvp, camera.vp, e.model);
 		gl.uniformMatrix4fv(this.u_mvp, false, this.mvp);
+		gl.uniformMatrix4fv(this.u_model, false, e.model);
+		gl.uniformMatrix4fv(this.u_inverse_transpose_model, false, e.inverse_transpose_model);
 		if (e.draw.elements) {
 			gl.drawElements(e.draw.mode, e.draw.count, gl.UNSIGNED_SHORT, e.draw.offset * ESIZE);
 		} else {

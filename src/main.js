@@ -26,10 +26,11 @@ function main() {
 	camera = init_camera();
 
 	// Geometry
-	scene_b(buffers, tracer);
+	scene_a(buffers, tracer);
 	buffers.populate();
 
 	snap_flag = true;
+	light_flag = true;
 
 	// dat.GUI
 	var panel = {
@@ -79,6 +80,7 @@ function main() {
 				l.o[2] = parseFloat(panel.Z);
 				l.on = panel.On;
 			}
+			buffers.updateLights();
 		},
 
 		Snap: function() {
@@ -118,12 +120,17 @@ function main() {
 		gl.useProgram(program_static);
 		gl.viewport(0, 0, gl.drawingBufferWidth/2, gl.drawingBufferHeight);
 
+		if (light_flag) {
+			light_flag = false;
+			buffers.updateLights();
+		}
+
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex)
 		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 6 * ASIZE, 0 * ASIZE);
 		gl.vertexAttribPointer(buffers.a_normal, 3, gl.FLOAT, false, 6 * ASIZE, 3 * ASIZE);
 
 		camera.update(dt);
-		buffers.draw(camera);
+		buffers.draw();
 
 		if (snap_flag) {
 			snap_flag = false;

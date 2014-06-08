@@ -61,6 +61,11 @@ function scene_a(buffers, tracer) {
 		return new Hit(ray, origin, origin, METAL);
 	}
 
+	function light_metal(ray, col) {
+		var origin = param_ray(ray, col.t);
+		return new Hit(ray, origin, origin, LIGHT_METAL);
+	}
+
 	var transform = mat4.create();
 	mat4.translate(transform, transform, [0, 0, 2]);
 	mat4.scale(transform, transform, [2, 2, 2]);
@@ -73,7 +78,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [-2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_b = new Entity(draw_sphere, transform, sphere, metal);
+	var sphere_b = new Entity(draw_sphere, transform, sphere, light_metal);
 	tracer.register(sphere_b);
 	buffers.register(sphere_b);
 
@@ -81,7 +86,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_c = new Entity(draw_sphere, transform, sphere, metal);
+	var sphere_c = new Entity(draw_sphere, transform, sphere, light_metal);
 	tracer.register(sphere_c);
 	buffers.register(sphere_c);
 

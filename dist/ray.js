@@ -8119,6 +8119,43 @@ function Buffers(program) {
 	this.a_normal = gl.getAttribLocation(program, 'a_normal');
 
 	this.u_mvp = gl.getUniformLocation(program, 'u_mvp');
+	this.u_model = gl.getUniformLocation(program, 'u_model');
+	this.u_inverse_transpose_model = gl.getUniformLocation(program, 'u_inverse_transpose_model');
+
+	this.u_lights = [
+		{
+			o: gl.getUniformLocation(program, 'u_a_position'),
+			a: gl.getUniformLocation(program, 'u_a_ambient'),
+			d: gl.getUniformLocation(program, 'u_a_diffuse'),
+			s: gl.getUniformLocation(program, 'u_a_specular')
+		},
+		{
+			o: gl.getUniformLocation(program, 'u_b_position'),
+			a: gl.getUniformLocation(program, 'u_b_ambient'),
+			d: gl.getUniformLocation(program, 'u_b_diffuse'),
+			s: gl.getUniformLocation(program, 'u_b_specular')
+		},
+		{
+			o: gl.getUniformLocation(program, 'u_c_position'),
+			a: gl.getUniformLocation(program, 'u_c_ambient'),
+			d: gl.getUniformLocation(program, 'u_c_diffuse'),
+			s: gl.getUniformLocation(program, 'u_c_specular')
+		},
+		{
+			o: gl.getUniformLocation(program, 'u_d_position'),
+			a: gl.getUniformLocation(program, 'u_d_ambient'),
+			d: gl.getUniformLocation(program, 'u_d_diffuse'),
+			s: gl.getUniformLocation(program, 'u_d_specular')
+		}
+	];
+
+	this.u_material = {
+		a: gl.getUniformLocation(program, 'u_ambient'),
+		d: gl.getUniformLocation(program, 'u_diffuse'),
+		s: gl.getUniformLocation(program, 'u_specular')
+	}
+
+	this.u_state = gl.getUniformLocation(program, 'u_state');
 
 	this.entities = [];
 
@@ -8143,6 +8180,18 @@ Buffers.prototype.register = function(entity) {
 
 Buffers.prototype.light = function(light) {
 	this.lights.push(light);
+};
+
+Buffers.prototype.updateLights = function() {
+	var state = 0;
+	for (var i = 0; i < this.u_lights.length && i < this.lights.length; i++) {
+		gl.uniform3fv(this.u_lights[i].o, this.lights[i].o);
+		gl.uniform3fv(this.u_lights[i].a, this.lights[i].a);
+		gl.uniform3fv(this.u_lights[i].d, this.lights[i].d);
+		gl.uniform3fv(this.u_lights[i].s, this.lights[i].s);
+		if(this.lights[i].on) state = state | (1 << i);
+	}
+	gl.uniform1i(this.u_state, state);
 }
 
 Buffers.prototype.arrayDraw = function(vertices, md) {
@@ -8183,11 +8232,13 @@ Buffers.prototype.elementDraw = function(vertices, indices, md) {
 	};
 };
 
-Buffers.prototype.draw = function(camera) {
+Buffers.prototype.draw = function() {
 	for (var i = 0; i < this.entities.length; i++) {
 		var e = this.entities[i];
 		mat4.multiply(this.mvp, camera.vp, e.model);
 		gl.uniformMatrix4fv(this.u_mvp, false, this.mvp);
+		gl.uniformMatrix4fv(this.u_model, false, e.model);
+		gl.uniformMatrix4fv(this.u_inverse_transpose_model, false, e.inverse_transpose_model);
 		if (e.draw.elements) {
 			gl.drawElements(e.draw.mode, e.draw.count, gl.UNSIGNED_SHORT, e.draw.offset * ESIZE);
 		} else {
@@ -8374,6 +8425,11 @@ function scene_a(buffers, tracer) {
 		return new Hit(ray, origin, origin, METAL);
 	}
 
+	function light_metal(ray, col) {
+		var origin = param_ray(ray, col.t);
+		return new Hit(ray, origin, origin, LIGHT_METAL);
+	}
+
 	var transform = mat4.create();
 	mat4.translate(transform, transform, [0, 0, 2]);
 	mat4.scale(transform, transform, [2, 2, 2]);
@@ -8386,7 +8442,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [-2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_b = new Entity(draw_sphere, transform, sphere, metal);
+	var sphere_b = new Entity(draw_sphere, transform, sphere, light_metal);
 	tracer.register(sphere_b);
 	buffers.register(sphere_b);
 
@@ -8394,7 +8450,7 @@ function scene_a(buffers, tracer) {
 	mat4.translate(transform, transform, [2.5, 0, 2]);
 	mat4.scale(transform, transform, [0.5, 2, 2]);
 
-	var sphere_c = new Entity(draw_sphere, transform, sphere, metal);
+	var sphere_c = new Entity(draw_sphere, transform, sphere, light_metal);
 	tracer.register(sphere_c);
 	buffers.register(sphere_c);
 
@@ -8813,10 +8869,11 @@ function main() {
 	camera = init_camera();
 
 	// Geometry
-	scene_b(buffers, tracer);
+	scene_a(buffers, tracer);
 	buffers.populate();
 
 	snap_flag = true;
+	light_flag = true;
 
 	// dat.GUI
 	var panel = {
@@ -8866,6 +8923,7 @@ function main() {
 				l.o[2] = parseFloat(panel.Z);
 				l.on = panel.On;
 			}
+			buffers.updateLights();
 		},
 
 		Snap: function() {
@@ -8905,12 +8963,17 @@ function main() {
 		gl.useProgram(program_static);
 		gl.viewport(0, 0, gl.drawingBufferWidth/2, gl.drawingBufferHeight);
 
+		if (light_flag) {
+			light_flag = false;
+			buffers.updateLights();
+		}
+
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex)
 		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 6 * ASIZE, 0 * ASIZE);
 		gl.vertexAttribPointer(buffers.a_normal, 3, gl.FLOAT, false, 6 * ASIZE, 3 * ASIZE);
 
 		camera.update(dt);
-		buffers.draw(camera);
+		buffers.draw();
 
 		if (snap_flag) {
 			snap_flag = false;
@@ -8950,39 +9013,45 @@ var PEWTER = new Material(
 	9.84615);
 
 var BLACK_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.01, 0.01, 0.01),
+	vec3.fromValues(0.05, 0.05, 0.05),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.5, 0.5, 0.5),
 	4.0);
 
 var WHITE_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.55, 0.55, 0.55),
 	vec3.fromValues(0.7, 0.7, 0.7),
 	4.0);
 
 var RED_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.55, 0.0, 0.0),
 	vec3.fromValues(0.7, 0.0, 0.0),
 	4.0);
 
 var GREEN_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.0, 0.55, 0.0),
 	vec3.fromValues(0.0, 0.7, 0.0),
 	4.0);
 
 var BLUE_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.0, 0.0, 0.55),
 	vec3.fromValues(0.7, 0.0, 0.7),
 	4.0);
 
 var METAL = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(1.0, 1.0, 1.0),
+	2.5);
+
+var LIGHT_METAL = new Material(
+	vec3.fromValues(0.05, 0.05, 0.05),
+	vec3.fromValues(0.25, 0.75, 0.25),
+	vec3.fromValues(0.25, 0.75, 0.25),
 	2.5);;
 
 // FILE SEPARATOR

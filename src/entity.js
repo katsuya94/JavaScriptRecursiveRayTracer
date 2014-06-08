@@ -1,7 +1,7 @@
 /* jshint strict: false */
 /* exported Entity */
 
-function Entity(draw, model, col, hit) {
+function Entity(draw, model, col, hit, material) {
 	this.draw = draw;
 	this.model = model;
 
@@ -16,4 +16,6 @@ function Entity(draw, model, col, hit) {
 
 	this.col = col;
 	this.hit = hit;
+
+	this.material = material;
 }

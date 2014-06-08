@@ -12,37 +12,43 @@ var PEWTER = new Material(
 	9.84615);
 
 var BLACK_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.01, 0.01, 0.01),
+	vec3.fromValues(0.05, 0.05, 0.05),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.5, 0.5, 0.5),
 	4.0);
 
 var WHITE_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.55, 0.55, 0.55),
 	vec3.fromValues(0.7, 0.7, 0.7),
 	4.0);
 
 var RED_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.55, 0.0, 0.0),
 	vec3.fromValues(0.7, 0.0, 0.0),
 	4.0);
 
 var GREEN_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.0, 0.55, 0.0),
 	vec3.fromValues(0.0, 0.7, 0.0),
 	4.0);
 
 var BLUE_PLASTIC = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(0.0, 0.0, 0.55),
 	vec3.fromValues(0.7, 0.0, 0.7),
 	4.0);
 
 var METAL = new Material(
-	vec3.fromValues(0.0, 0.0, 0.0),
-	vec3.fromValues(0.0, 0.0, 0.0),
+	vec3.fromValues(0.05, 0.05, 0.05),
+	vec3.fromValues(0.05, 0.05, 0.05),
 	vec3.fromValues(1.0, 1.0, 1.0),
+	2.5);
+
+var LIGHT_METAL = new Material(
+	vec3.fromValues(0.05, 0.05, 0.05),
+	vec3.fromValues(0.25, 0.75, 0.25),
+	vec3.fromValues(0.25, 0.75, 0.25),
 	2.5);
