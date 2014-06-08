@@ -1,3 +1,7 @@
+/* jshint strict: false */
+/* global vec3 */
+/* exported Material, PEWTER, BLACK_PLASTIC, WHITE_PLASTIC, RED_PLASTIC, GREEN_PLASTIC, BLUE_PLASTIC, METAL, LIGHT_METAL */
+
 function Material(ambient, diffuse, specular, alpha) {
 	this.a = ambient;
 	this.d = diffuse;

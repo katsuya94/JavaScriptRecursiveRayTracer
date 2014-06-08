@@ -1,5 +1,5 @@
 /* jshint strict: false */
-/* exported sphere */
+/* exported sphere_mesh */
 
 // From JTPointPhongSphere_PerFragment.js
 function sphere_mesh() {

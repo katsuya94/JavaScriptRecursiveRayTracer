@@ -1,8 +1,10 @@
 /* jshint strict: false */
-/* global mat4, vec3 */
-/* exported init_camera */
+/* global mat4, vec3, quat */
+/* global FOV */
+/* global camera: true */
+/* exported init_camera, camera */
 
-var projection;
+var camera;
 
 function init_camera() {
 	camera = {};
@@ -60,7 +62,5 @@ function init_camera() {
 	camera.resize = function(ar) {
 		camera.ar = ar;
 		mat4.perspective(camera.projection, FOV, ar, 1.0, 100.0);
-	}
-
-	return camera;
+	};
 }

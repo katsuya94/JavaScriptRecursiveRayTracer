@@ -1,6 +1,7 @@
 /* jshint strict: false */
-/* global gl: true, canvas: true, mat4, projection */
-/* exported createShader, createProgram, resize */
+/* global gl: true, camera, canvas: true */
+/* global vec3 */
+/* exported createShader, createProgram, resize, param_ray, world_ray_to_model */
 
 function createShader(source, type) {
 
@@ -41,11 +42,12 @@ function resize() {
 
 Math.baseLog = function(x, y) {
     return Math.log(y) / Math.log(x);
-}
+};
 
 function param_ray(ray, t) {
-	return vec3.fromValues(ray.p[0] + ray.u[0] * t, ray.p[1] + ray.u[1] * t, ray.p[2] + ray.u[2] * t)
+	return vec3.fromValues(ray.p[0] + ray.u[0] * t, ray.p[1] + ray.u[1] * t, ray.p[2] + ray.u[2] * t);
 }
+
 function world_ray_to_model(m_ray, ray, entity) {
 	var m = entity.inverse_model;
 	vec3.set(m_ray.p,

@@ -1,10 +1,9 @@
 /* jshint strict: false */
-/* global this, gl */
-/* global mat4 */
-/* global ASIZE, ESIZE, VSIZE */
-/* exported init_buffers */
-
-var NIL = vec3.create();
+/* global gl, camera */
+/* global vec3, vec4 */
+/* global world_ray_to_model */
+/* global T_2 */
+/* exported init_buffers, X, _X, Y, _Y, Z, _Z, Hit */
 
 var X = vec3.fromValues(1.0, 0.0, 0.0);
 var _X = vec3.fromValues(-1.0, 0.0, 0.0);
@@ -197,7 +196,7 @@ Tracer.prototype.sample = function(pixel, x, y) {
 	var r = new Ray(p, u);
 
 	this.calculate(pixel, r);
-}
+};
 
 Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) {
 	aa = parseInt(aa);

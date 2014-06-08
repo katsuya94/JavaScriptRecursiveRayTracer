@@ -1,11 +1,17 @@
 /* jshint strict: false */
-/* global dat, mat4 */
+/* global dat, quat, vec3 */
 /* global createProgram, resize */
-/* global Buffers, Tracer, Entity, grid, init_camera */
-/* exported main, canvas, gl, program */
+/* global ASIZE */
+/* global scene_a, scene_b, init_camera */
+/* global Buffers, Tracer */
+/* global camera:true */
+/* exported main, canvas, gl */
 
 var canvas;
 var gl;
+
+var snap_flag;
+var light_flag;
 
 function main() {
 	canvas = document.getElementById('webgl');
@@ -23,7 +29,7 @@ function main() {
 	gl.enable(gl.DEPTH_TEST);
 
 	// Set up Camera
-	camera = init_camera();
+	init_camera();
 
 	// Geometry
 	scene_a(buffers, tracer);
@@ -97,7 +103,7 @@ function main() {
 	config.add(panel, 'AntiAliasing', { None: 0, Jitter4X: 1, Jitter16X: 2});
 	config.add(panel, 'Detail', -8, 0).step(1);
 	config.add(panel, 'Recursion', 0, 5).step(1);
-	var cam = gui.addFolder('Camera')
+	var cam = gui.addFolder('Camera');
 	cam.add(panel, 'Code').listen();
 	cam.add(panel, 'UseCode');
 	var lighting = gui.addFolder('Lighting');
@@ -127,7 +133,7 @@ function main() {
 			buffers.updateLights();
 		}
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex)
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex);
 		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 6 * ASIZE, 0 * ASIZE);
 		gl.vertexAttribPointer(buffers.a_normal, 3, gl.FLOAT, false, 6 * ASIZE, 3 * ASIZE);
 

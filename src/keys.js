@@ -1,3 +1,6 @@
+/* jshint strict: false */
+/* global camera, snap_flag: true */
+
 window.onkeydown = function(e) {
 		var key = e.keyCode ? e.keyCode : e.which;
 		switch (key) {

@@ -1,3 +1,12 @@
+/* jshint strict: false */
+/* global param_ray */
+/* global X, _X, Y, _Y, Z, _Z */
+/* global BLACK_PLASTIC, WHITE_PLASTIC, METAL, LIGHT_METAL, PEWTER, RED_PLASTIC, GREEN_PLASTIC, BLUE_PLASTIC */
+/* global Hit, Entity, Light */
+/* global vec3, mat4 */
+/* global sphere_mesh, grid, box */
+/* exported scene_a, scene_b */
+
 function floor_col(ray) {
 	var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
 	return t > 0 ? { t: t } : null;
@@ -5,8 +14,8 @@ function floor_col(ray) {
 
 function floor_hit(ray, col) {
 	var origin = param_ray(ray, col.t);
-	var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
-	return new Hit(ray, origin, Z, m)
+	var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) === 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
+	return new Hit(ray, origin, Z, m);
 }
 
 function scene_a(buffers, tracer) {
@@ -124,16 +133,16 @@ function scene_b(buffers, tracer) {
 		ctx.canvas.width = tex.width;
 		ctx.canvas.height = tex.height;
 		ctx.drawImage(tex, 0, 0);
-		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
+		var data = ctx.getImageData(0, 0, tex.width, tex.height).data;
 		sample = function(x, y) {
 			var u = x * tex.width;
 			var v = y * tex.height;
 			x = ~~u;
 			y = ~~v;
-			_x = (x + 1) % tex.width;
-			_y = (y + 1) % tex.height;
+			var _x = (x + 1) % tex.width;
+			var _y = (y + 1) % tex.height;
 			var dx = u - x;
-			var _dx = 1 - dx
+			var _dx = 1 - dx;
 			var dy = v - y;
 			var _dy = 1 - dy;
 			
@@ -153,19 +162,19 @@ function scene_b(buffers, tracer) {
 				data[tex.width * 4 * _y + _x * 4],
 				data[tex.width * 4 * _y + _x * 4 + 1],
 				data[tex.width * 4 * _y + _x * 4 + 2]);
-			var l = vec3.fromValues(
+			var low = vec3.fromValues(
 				_dx * ll[0] + dx * lr[0],
 				_dx * ll[1] + dx * lr[1],
 				_dx * ll[2] + dx * lr[2]);
-			var u = vec3.fromValues(
+			var upp = vec3.fromValues(
 				_dx * ul[0] + dx * ur[0],
 				_dx * ul[1] + dx * ur[1],
 				_dx * ul[2] + dx * ur[2]);
 			return vec3.fromValues(
-				(dy * l[0] + _dy * u[0]) / 256,
-				(dy * l[1] + _dy * u[1]) / 256,
-				(dy * l[2] + _dy * u[2]) / 256);
-		}
+				(dy * low[0] + _dy * upp[0]) / 256,
+				(dy * low[1] + _dy * upp[1]) / 256,
+				(dy * low[2] + _dy * upp[2]) / 256);
+		};
 	}, false);
 	tex.src = 'normal.jpg';
 
@@ -176,12 +185,12 @@ function scene_b(buffers, tracer) {
 			if (t > 0) {
 				var origin = param_ray(ray, t);
 				if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
-					return { t: t, origin: origin, normal: n, a: a, b: b, u: u, v: v }
+					return { t: t, origin: origin, normal: n, a: a, b: b, u: u, v: v };
 				}
 			}
 		}
 		return null;
-	};
+	}
 
 	function bump_cube(ray) {
 		var h;
@@ -200,7 +209,7 @@ function scene_b(buffers, tracer) {
 		if (h) return h;
 		
 		return null;
-	};
+	}
 
 	function bump_hit(ray, col) {
 		var normal = vec3.clone(col.normal);
@@ -208,7 +217,7 @@ function scene_b(buffers, tracer) {
 		vec3.scaleAndAdd(normal, normal, col.u, (s[0] - 0.5) * 2);
 		vec3.scaleAndAdd(normal, normal, col.v, (s[1] - 0.5) * 2);
 		vec3.normalize(normal, normal);
-		return new Hit(ray, col.origin, normal, PEWTER)
+		return new Hit(ray, col.origin, normal, PEWTER);
 	}
 
 	var transform = mat4.create();
@@ -228,12 +237,12 @@ function scene_b(buffers, tracer) {
 			if (t > 0) {
 				var origin = param_ray(ray, t);
 				if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
-					return { t: t, normal: n }
+					return { t: t, normal: n };
 				}
 			}
 		}
 		return null;
-	};
+	}
 
 	function cube(ray) {
 		var h;
@@ -252,7 +261,7 @@ function scene_b(buffers, tracer) {
 		if (h) return h;
 		
 		return null;
-	};
+	}
 
 	function red_hit(ray, col) {
 		var origin = param_ray(ray, col.t);

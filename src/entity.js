@@ -1,4 +1,5 @@
 /* jshint strict: false */
+/* global mat4 */
 /* exported Entity */
 
 function Entity(draw, model, col, hit, material, mode) {

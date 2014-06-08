@@ -1,3 +1,6 @@
+/* jshint strict: false */
+/* exported Light */
+
 function Light(position, ambient, diffuse, specular) {
 	this.o = position;
 	this.a = ambient;

@@ -8055,7 +8055,7 @@ window.cancelAnimFrame = (function() {
 
 // FILE SEPARATOR
 
-/* exported bo*/
+/* exported box */
 
 function box() {
 	var array = [
@@ -8107,9 +8107,9 @@ function box() {
 
 // FILE SEPARATOR
 
-/* global this, gl */
+/* global gl, camera */
 /* global mat4 */
-/* global ASIZE, ESIZE, VSIZE */
+/* global ESIZE, VSIZE */
 /* exported init_buffers */
 
 function Buffers(program) {
@@ -8156,7 +8156,7 @@ function Buffers(program) {
 		d: gl.getUniformLocation(program, 'u_diffuse'),
 		s: gl.getUniformLocation(program, 'u_specular'),
 		alpha: gl.getUniformLocation(program, 'u_alpha')
-	}
+	};
 
 	this.u_state = gl.getUniformLocation(program, 'u_state');
 
@@ -8197,7 +8197,7 @@ Buffers.prototype.updateLights = function() {
 		if(this.lights[i].on) state = state | (1 << i);
 	}
 	gl.uniform1i(this.u_state, state);
-}
+};
 
 Buffers.prototype.arrayDraw = function(vertices, md) {
 	var offset = this.vertices.length / VSIZE;
@@ -8205,8 +8205,6 @@ Buffers.prototype.arrayDraw = function(vertices, md) {
 	var mode = gl[md.toUpperCase()];
 
 	this.vertices = this.vertices.concat(vertices);
-
-	var thisself = this;
 
 	return {
 		elements: false,
@@ -8273,10 +8271,12 @@ Buffers.prototype.populate = function() {
 
 // FILE SEPARATOR
 
-/* global mat4, vec3 */
-/* exported init_camera */
+/* global mat4, vec3, quat */
+/* global FOV */
+/* global camera: true */
+/* exported init_camera, camera */
 
-var projection;
+var camera;
 
 function init_camera() {
 	camera = {};
@@ -8334,14 +8334,12 @@ function init_camera() {
 	camera.resize = function(ar) {
 		camera.ar = ar;
 		mat4.perspective(camera.projection, FOV, ar, 1.0, 100.0);
-	}
-
-	return camera;
+	};
 };
 
 // FILE SEPARATOR
 
-/* exported FSIZE */
+/* exported ASIZE, ESIZE, VSIZE, FOV, T_2 */
 
 var ASIZE = (new Float32Array()).BYTES_PER_ELEMENT;
 var ESIZE = (new Uint16Array()).BYTES_PER_ELEMENT;
@@ -8352,6 +8350,7 @@ var T_2 = Math.tan(FOV / 2);;
 
 // FILE SEPARATOR
 
+/* global mat4 */
 /* exported Entity */
 
 function Entity(draw, model, col, hit, material, mode) {
@@ -8376,6 +8375,14 @@ function Entity(draw, model, col, hit, material, mode) {
 
 // FILE SEPARATOR
 
+/* global param_ray */
+/* global X, _X, Y, _Y, Z, _Z */
+/* global BLACK_PLASTIC, WHITE_PLASTIC, METAL, LIGHT_METAL, PEWTER, RED_PLASTIC, GREEN_PLASTIC, BLUE_PLASTIC */
+/* global Hit, Entity, Light */
+/* global vec3, mat4 */
+/* global sphere_mesh, grid, box */
+/* exported scene_a, scene_b */
+
 function floor_col(ray) {
 	var t = vec3.dot(ray.p, Z) / vec3.dot(ray.u, _Z);
 	return t > 0 ? { t: t } : null;
@@ -8383,8 +8390,8 @@ function floor_col(ray) {
 
 function floor_hit(ray, col) {
 	var origin = param_ray(ray, col.t);
-	var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) == 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
-	return new Hit(ray, origin, Z, m)
+	var m = (((Math.floor(origin[0]) + Math.floor(origin[1])) % 2) === 0) ? BLACK_PLASTIC : WHITE_PLASTIC;
+	return new Hit(ray, origin, Z, m);
 }
 
 function scene_a(buffers, tracer) {
@@ -8502,16 +8509,16 @@ function scene_b(buffers, tracer) {
 		ctx.canvas.width = tex.width;
 		ctx.canvas.height = tex.height;
 		ctx.drawImage(tex, 0, 0);
-		data = ctx.getImageData(0, 0, tex.width, tex.height).data;
+		var data = ctx.getImageData(0, 0, tex.width, tex.height).data;
 		sample = function(x, y) {
 			var u = x * tex.width;
 			var v = y * tex.height;
 			x = ~~u;
 			y = ~~v;
-			_x = (x + 1) % tex.width;
-			_y = (y + 1) % tex.height;
+			var _x = (x + 1) % tex.width;
+			var _y = (y + 1) % tex.height;
 			var dx = u - x;
-			var _dx = 1 - dx
+			var _dx = 1 - dx;
 			var dy = v - y;
 			var _dy = 1 - dy;
 			
@@ -8531,19 +8538,19 @@ function scene_b(buffers, tracer) {
 				data[tex.width * 4 * _y + _x * 4],
 				data[tex.width * 4 * _y + _x * 4 + 1],
 				data[tex.width * 4 * _y + _x * 4 + 2]);
-			var l = vec3.fromValues(
+			var low = vec3.fromValues(
 				_dx * ll[0] + dx * lr[0],
 				_dx * ll[1] + dx * lr[1],
 				_dx * ll[2] + dx * lr[2]);
-			var u = vec3.fromValues(
+			var upp = vec3.fromValues(
 				_dx * ul[0] + dx * ur[0],
 				_dx * ul[1] + dx * ur[1],
 				_dx * ul[2] + dx * ur[2]);
 			return vec3.fromValues(
-				(dy * l[0] + _dy * u[0]) / 256,
-				(dy * l[1] + _dy * u[1]) / 256,
-				(dy * l[2] + _dy * u[2]) / 256);
-		}
+				(dy * low[0] + _dy * upp[0]) / 256,
+				(dy * low[1] + _dy * upp[1]) / 256,
+				(dy * low[2] + _dy * upp[2]) / 256);
+		};
 	}, false);
 	tex.src = 'normal.jpg';
 
@@ -8554,12 +8561,12 @@ function scene_b(buffers, tracer) {
 			if (t > 0) {
 				var origin = param_ray(ray, t);
 				if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
-					return { t: t, origin: origin, normal: n, a: a, b: b, u: u, v: v }
+					return { t: t, origin: origin, normal: n, a: a, b: b, u: u, v: v };
 				}
 			}
 		}
 		return null;
-	};
+	}
 
 	function bump_cube(ray) {
 		var h;
@@ -8578,7 +8585,7 @@ function scene_b(buffers, tracer) {
 		if (h) return h;
 		
 		return null;
-	};
+	}
 
 	function bump_hit(ray, col) {
 		var normal = vec3.clone(col.normal);
@@ -8586,7 +8593,7 @@ function scene_b(buffers, tracer) {
 		vec3.scaleAndAdd(normal, normal, col.u, (s[0] - 0.5) * 2);
 		vec3.scaleAndAdd(normal, normal, col.v, (s[1] - 0.5) * 2);
 		vec3.normalize(normal, normal);
-		return new Hit(ray, col.origin, normal, PEWTER)
+		return new Hit(ray, col.origin, normal, PEWTER);
 	}
 
 	var transform = mat4.create();
@@ -8606,12 +8613,12 @@ function scene_b(buffers, tracer) {
 			if (t > 0) {
 				var origin = param_ray(ray, t);
 				if (origin[a] < 1 && origin[a] > -1 && origin[b] < 1 && origin[b] > -1) {
-					return { t: t, normal: n }
+					return { t: t, normal: n };
 				}
 			}
 		}
 		return null;
-	};
+	}
 
 	function cube(ray) {
 		var h;
@@ -8630,7 +8637,7 @@ function scene_b(buffers, tracer) {
 		if (h) return h;
 		
 		return null;
-	};
+	}
 
 	function red_hit(ray, col) {
 		var origin = param_ray(ray, col.t);
@@ -8722,6 +8729,8 @@ function grid() {
 };
 
 // FILE SEPARATOR
+
+/* global camera, snap_flag: true */
 
 window.onkeydown = function(e) {
 		var key = e.keyCode ? e.keyCode : e.which;
@@ -8818,6 +8827,8 @@ window.onkeydown = function(e) {
 
 // FILE SEPARATOR
 
+/* exported Light */
+
 function Light(position, ambient, diffuse, specular) {
 	this.o = position;
 	this.a = ambient;
@@ -8828,13 +8839,19 @@ function Light(position, ambient, diffuse, specular) {
 
 // FILE SEPARATOR
 
-/* global dat, mat4 */
+/* global dat, quat, vec3 */
 /* global createProgram, resize */
-/* global Buffers, Tracer, Entity, grid, init_camera */
-/* exported main, canvas, gl, program */
+/* global ASIZE */
+/* global scene_a, scene_b, init_camera */
+/* global Buffers, Tracer */
+/* global camera:true */
+/* exported main, canvas, gl */
 
 var canvas;
 var gl;
+
+var snap_flag;
+var light_flag;
 
 function main() {
 	canvas = document.getElementById('webgl');
@@ -8852,7 +8869,7 @@ function main() {
 	gl.enable(gl.DEPTH_TEST);
 
 	// Set up Camera
-	camera = init_camera();
+	init_camera();
 
 	// Geometry
 	scene_a(buffers, tracer);
@@ -8926,7 +8943,7 @@ function main() {
 	config.add(panel, 'AntiAliasing', { None: 0, Jitter4X: 1, Jitter16X: 2});
 	config.add(panel, 'Detail', -8, 0).step(1);
 	config.add(panel, 'Recursion', 0, 5).step(1);
-	var cam = gui.addFolder('Camera')
+	var cam = gui.addFolder('Camera');
 	cam.add(panel, 'Code').listen();
 	cam.add(panel, 'UseCode');
 	var lighting = gui.addFolder('Lighting');
@@ -8956,7 +8973,7 @@ function main() {
 			buffers.updateLights();
 		}
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex)
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.buffer_vertex);
 		gl.vertexAttribPointer(buffers.a_position, 3, gl.FLOAT, false, 6 * ASIZE, 0 * ASIZE);
 		gl.vertexAttribPointer(buffers.a_normal, 3, gl.FLOAT, false, 6 * ASIZE, 3 * ASIZE);
 
@@ -8986,6 +9003,9 @@ function main() {
 };
 
 // FILE SEPARATOR
+
+/* global vec3 */
+/* exported Material, PEWTER, BLACK_PLASTIC, WHITE_PLASTIC, RED_PLASTIC, GREEN_PLASTIC, BLUE_PLASTIC, METAL, LIGHT_METAL */
 
 function Material(ambient, diffuse, specular, alpha) {
 	this.a = ambient;
@@ -9044,7 +9064,7 @@ var LIGHT_METAL = new Material(
 
 // FILE SEPARATOR
 
-/* exported sphere */
+/* exported sphere_mesh */
 
 // From JTPointPhongSphere_PerFragment.js
 function sphere_mesh() {
@@ -9102,12 +9122,11 @@ function sphere_mesh() {
 
 // FILE SEPARATOR
 
-/* global this, gl */
-/* global mat4 */
-/* global ASIZE, ESIZE, VSIZE */
-/* exported init_buffers */
-
-var NIL = vec3.create();
+/* global gl, camera */
+/* global vec3, vec4 */
+/* global world_ray_to_model */
+/* global T_2 */
+/* exported init_buffers, X, _X, Y, _Y, Z, _Z, Hit */
 
 var X = vec3.fromValues(1.0, 0.0, 0.0);
 var _X = vec3.fromValues(-1.0, 0.0, 0.0);
@@ -9300,7 +9319,7 @@ Tracer.prototype.sample = function(pixel, x, y) {
 	var r = new Ray(p, u);
 
 	this.calculate(pixel, r);
-}
+};
 
 Tracer.prototype.rasterize = function(width, height, big_width, big_height, aa) {
 	aa = parseInt(aa);
@@ -9428,8 +9447,9 @@ Tracer.prototype.draw = function() {
 
 // FILE SEPARATOR
 
-/* global gl: true, canvas: true, mat4, projection */
-/* exported createShader, createProgram, resize */
+/* global gl: true, camera, canvas: true */
+/* global vec3 */
+/* exported createShader, createProgram, resize, param_ray, world_ray_to_model */
 
 function createShader(source, type) {
 
@@ -9470,11 +9490,12 @@ function resize() {
 
 Math.baseLog = function(x, y) {
     return Math.log(y) / Math.log(x);
-}
+};
 
 function param_ray(ray, t) {
-	return vec3.fromValues(ray.p[0] + ray.u[0] * t, ray.p[1] + ray.u[1] * t, ray.p[2] + ray.u[2] * t)
+	return vec3.fromValues(ray.p[0] + ray.u[0] * t, ray.p[1] + ray.u[1] * t, ray.p[2] + ray.u[2] * t);
 }
+
 function world_ray_to_model(m_ray, ray, entity) {
 	var m = entity.inverse_model;
 	vec3.set(m_ray.p,

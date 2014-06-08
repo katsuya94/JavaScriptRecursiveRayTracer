@@ -1,7 +1,7 @@
 /* jshint strict: false */
-/* global this, gl */
+/* global gl, camera */
 /* global mat4 */
-/* global ASIZE, ESIZE, VSIZE */
+/* global ESIZE, VSIZE */
 /* exported init_buffers */
 
 function Buffers(program) {
@@ -48,7 +48,7 @@ function Buffers(program) {
 		d: gl.getUniformLocation(program, 'u_diffuse'),
 		s: gl.getUniformLocation(program, 'u_specular'),
 		alpha: gl.getUniformLocation(program, 'u_alpha')
-	}
+	};
 
 	this.u_state = gl.getUniformLocation(program, 'u_state');
 
@@ -89,7 +89,7 @@ Buffers.prototype.updateLights = function() {
 		if(this.lights[i].on) state = state | (1 << i);
 	}
 	gl.uniform1i(this.u_state, state);
-}
+};
 
 Buffers.prototype.arrayDraw = function(vertices, md) {
 	var offset = this.vertices.length / VSIZE;
@@ -97,8 +97,6 @@ Buffers.prototype.arrayDraw = function(vertices, md) {
 	var mode = gl[md.toUpperCase()];
 
 	this.vertices = this.vertices.concat(vertices);
-
-	var thisself = this;
 
 	return {
 		elements: false,

@@ -1,5 +1,5 @@
-/* jshint strict: alse */
-/* exported bo*/
+/* jshint strict: false */
+/* exported box */
 
 function box() {
 	var array = [
