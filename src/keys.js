@@ -1,6 +1,8 @@
 /* jshint strict: false */
 /* global camera, snap_flag: true */
 
+var LOCK_HELP_KEY = false;
+
 window.onkeydown = function(e) {
 		var key = e.keyCode ? e.keyCode : e.which;
 		switch (key) {
@@ -41,7 +43,14 @@ window.onkeydown = function(e) {
 			camera.zx[1] = true;
 			break;
 		case 112:
-			document.getElementById('help').style.display = 'block';
+			if (!LOCK_HELP_KEY) {
+				if (document.getElementById('help').style.display == 'none') {
+					document.getElementById('help').style.display = 'block';
+				} else {
+					document.getElementById('help').style.display = 'none';
+				}
+				LOCK_HELP_KEY = true;
+			}
 			break;
 		case 32:
 			snap_flag = true;
@@ -89,7 +98,7 @@ window.onkeydown = function(e) {
 			camera.zx[1] = false;
 			break;
 		case 112:
-			document.getElementById('help').style.display = 'none';
+			LOCK_HELP_KEY = false;
 			break;
 		}
 	};
